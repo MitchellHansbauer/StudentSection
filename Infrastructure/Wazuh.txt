@@ -1,3 +1,5 @@
 Added Wazuh on 10/4
 
 10/8 - Experiencing troubles getting the service to run after rebooting, will attempt to fix
+
+10/9 - Issue related to Wazuh Indexer, restarted the service and is now back online
