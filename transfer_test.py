@@ -4,7 +4,6 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 
 def click_back_button(url):
-    # Specify the path to chromedriver using forward slashes for the path
     driver_path = "C:/Users/mitch/Downloads/chromedriver-win64/chromedriver-win64/chromedriver.exe"
     service = Service(executable_path=driver_path)
     options = Options()
