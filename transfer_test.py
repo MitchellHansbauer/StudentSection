@@ -2,41 +2,48 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
-def click_back_button(url):
+def login_and_click_back(url, email, password):
     driver_path = "C:/Users/mitch/Downloads/chromedriver-win64/chromedriver-win64/chromedriver.exe"
     service = Service(executable_path=driver_path)
     options = Options()
 
-    # You can enable or disable headless mode as needed
-    # options.headless = True  # Uncomment if you want to run in headless mode
-
-    # Additional options to avoid crashes in headless mode
     options.add_argument('--disable-gpu')
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
+    options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36")
 
-    # Initialize the driver
     driver = webdriver.Chrome(service=service, options=options)
+    wait = WebDriverWait(driver, 20)
 
     try:
-        # Navigate to the page
         driver.get(url)
 
-        # Wait for the page to load
-        driver.implicitly_wait(10)
+        # Email input and proceed to password
+        email_input = wait.until(EC.visibility_of_element_located((By.XPATH, '//input[@id="signin-email-input"]')))
+        email_input.send_keys(email)
+        continue_button = driver.find_element(By.XPATH, '//button[@data-testid="signin-submit-btn"]')
+        continue_button.click()
 
-        # Find the "Back to Home" button using XPath and click it
-        back_button = driver.find_element(By.XPATH, '//button[contains(text(), "Back to Home")]')
+        # Password input and sign in
+        password_input = wait.until(EC.visibility_of_element_located((By.XPATH, '//input[@data-testid="signin-pass-input"]')))
+        password_input.send_keys(password)
+        sign_in_button = driver.find_element(By.XPATH, '//button[@data-testid="signin-submit-btn"]')
+        sign_in_button.click()
+
+        # Assuming there might be a loading or transition, wait until the expected button or page element is visible
+        back_button = wait.until(EC.visibility_of_element_located((By.XPATH, '//button[contains(text(), "Back to Home")]')))
         back_button.click()
 
-        print("Clicked the 'Back to Home' button successfully.")
+        print("Logged in and clicked the 'Back to Home' button successfully.")
 
     finally:
-        # Clean up by closing the driver
         driver.quit()
 
 if __name__ == "__main__":
-    # URL of the page
     url = "https://gobearcats.evenue.net/myaccount/transfers/seasons"
-    click_back_button(url)
+    email = "hansbama@mail.uc.edu"
+    password = "Time2add"
+    login_and_click_back(url, email, password)
