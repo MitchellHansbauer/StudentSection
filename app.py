@@ -1,25 +1,41 @@
-from flask import Flask, request
-import transfer_test  # Import the Selenium test script
-import logging
+import os
+import requests
+from flask import Flask, request, jsonify
 
-# Initialize the Flask app
 app = Flask(__name__)
 
-# Set up logging
-logging.basicConfig(filename='logs/transfer_test.log', level=logging.INFO)
+# POST endpoint to fetch user's ticket information via ticket_id
+@app.route('/get-ticket-info', methods=['POST'])
+def get_ticket_info():
+    data = request.json
+    ticket_id = data.get('ticket_id')
 
-@app.route('/run-selenium', methods=['POST'])
-def run_selenium():
-    search_query = request.form['query']
-    
+    if not ticket_id:
+        return jsonify({"error": "Missing ticket_id in request body"}), 400
+
+    # Paciolan API endpoint to fetch ticket information (mocked here, replace with real endpoint)
+    paciolan_url = f"https://link-sandbox.paciolan.info/v1/tickets/{ticket_id}"  # Replace with correct endpoint for fetching ticket details
+
+    # Setting up headers for the API call
+    headers = {
+        'Authorization': f'Bearer {os.getenv("PACIOLAN_API_TOKEN")}',  # Set your Paciolan API token in environment variables
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'User-Agent': 'MyApplication/1.0',
+    }
+
     try:
-        # Call the Selenium script and capture the result
-        result = transfer_test.run_selenium_test(search_query)
-        logging.info(f"Selenium test ran successfully for query: {search_query}")
-        return f'Selenium test completed: {result}'
-    except Exception as e:
-        logging.error(f"Error running Selenium test: {str(e)}")
-        return f'Error running Selenium test: {str(e)}', 500
+        # Make the API call to Paciolan
+        response = requests.get(paciolan_url, headers=headers)
 
-if __name__ == '__main__':
-    app.run(debug=True)
+        # Check if the response from Paciolan is successful
+        if response.status_code == 200:
+            ticket_info = response.json()  # Parse the JSON response from Paciolan
+            return jsonify(ticket_info), 200
+        elif response.status_code == 404:
+            return jsonify({"error": "Ticket not found"}), 404
+        else:
+            return jsonify({"error": "Failed to retrieve ticket information", "details": response.text}), response.status_code
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
