@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Tickets</title>
+    <style>
+        /* Basic styling for layout and positioning */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* Header */
+        h1 {
+            font-size: 2em;
+            color: #333;
+            margin: 20px 0;
+        }
+
+        /* Button styles */
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            font-size: 1.2em;
+            border: none;
+            cursor: pointer;
+            border-radius: 8px;
+            color: #fff;
+        }
+
+        .btn-buy {
+            background-color: #3498db;
+        }
+
+        .btn-sell {
+            background-color: #e74c3c;
+        }
+
+        /* Overlay background */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none; /* Initially hidden */
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        /* Popup box styling */
+        .popup {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            width: 300px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            position: relative;
+        }
+
+        .popup h2 {
+            margin-top: 0;
+            font-size: 1.5em;
+            color: #333;
+        }
+
+        /* Close button */
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            cursor: pointer;
+            font-size: 1.2em;
+            color: #888;
+        }
+
+        /* Listings and Buttons */
+        .listing {
+            font-size: 1em;
+            margin: 10px 0;
+            padding: 5px 10px;
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .popup .btn-popup {
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 1em;
+            margin-top: 10px;
+            display: block;
+            width: 100%;
+            color: #fff;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .btn-popup-set {
+            background-color: #3498db;
+        }
+
+        .btn-popup-sell-now {
+            background-color: #27ae60;
+        }
+    </style>
+</head>
+<body>
+    <!-- Page Header -->
+    <h1>Tickets for Example Game dd/mm/yyyy</h1>
+
+    <!-- Button Group for Buy and Sell Options -->
+    <div class="button-group">
+        <button class="btn btn-buy" onclick="showPopup('buy')">Buy</button>
+        <button class="btn btn-sell" onclick="showPopup('sell')">Sell</button>
+    </div>
+
+    <!-- Price Confirmation Popup -->
+    <div class="overlay" id="popupOverlay">
+        <div class="popup">
+            <span class="close-btn" onclick="closePopup()">×</span>
+            <h2 id="popupTitle">Choose Your Option</h2>
+            <div id="popupContent">
+                <!-- Dynamic content will be loaded here based on Buy/Sell selection -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Show the popup with specific content based on 'Buy' or 'Sell' button click
+        function showPopup(type) {
+            const popupTitle = document.getElementById("popupTitle");
+            const popupContent = document.getElementById("popupContent");
+
+            // Reset popup content
+            popupContent.innerHTML = "";
+
+            if (type === 'buy') {
+                popupTitle.textContent = "Available Tickets";
+                
+                // Sample data for top 3 available tickets
+                const availableTickets = [
+                    { seat: 'A1', price: '100.00' },
+                    { seat: 'A2', price: '120.00' },
+                    { seat: 'A3', price: '110.00' }
+                ];
+
+                // Display available tickets
+                availableTickets.forEach(ticket => {
+                    const listing = document.createElement('div');
+                    listing.className = 'listing';
+                    listing.textContent = `Seat: ${ticket.seat}, Price: $${ticket.price}`;
+                    popupContent.appendChild(listing);
+                });
+
+                // 'Set Custom Price' Button
+                const setCustomPriceBtn = document.createElement('button');
+                setCustomPriceBtn.className = 'btn-popup btn-popup-set';
+                setCustomPriceBtn.textContent = 'Set Custom Price';
+                setCustomPriceBtn.onclick = () => { alert("Redirect to custom price buy order entry"); };
+                popupContent.appendChild(setCustomPriceBtn);
+
+            } else if (type === 'sell') {
+                popupTitle.textContent = "Last 3 Sold Tickets";
+
+                // Sample data for last 3 sold tickets
+                const soldTickets = [
+                    { seat: 'B1', price: '90.00' },
+                    { seat: 'B2', price: '85.00' },
+                    { seat: 'B3', price: '95.00' }
+                ];
+
+                // Calculate and display average price
+                const avgPrice = soldTickets.reduce((sum, ticket) => sum + parseFloat(ticket.price), 0) / soldTickets.length;
+                soldTickets.forEach(ticket => {
+                    const listing = document.createElement('div');
+                    listing.className = 'listing';
+                    listing.textContent = `Seat: ${ticket.seat}, Price: $${ticket.price}`;
+                    popupContent.appendChild(listing);
+                });
+
+                // Display average price
+                const avgPriceDisplay = document.createElement('p');
+                avgPriceDisplay.textContent = `Average Sold Price: $${avgPrice.toFixed(2)}`;
+                popupContent.appendChild(avgPriceDisplay);
+
+                // 'Sell Now' Button
+                const sellNowBtn = document.createElement('a');
+                sellNowBtn.className = 'btn-popup btn-popup-sell-now';
+                sellNowBtn.textContent = 'Sell Now';
+                sellNowBtn.href = "#"; // Redirect link for future available buy orders page
+                popupContent.appendChild(sellNowBtn);
+
+                // 'Set Custom Sale Price' Button
+                const setCustomSalePriceBtn = document.createElement('button');
+                setCustomSalePriceBtn.className = 'btn-popup btn-popup-set';
+                setCustomSalePriceBtn.textContent = 'Set Custom Sale Price';
+                setCustomSalePriceBtn.onclick = () => { alert("Redirect to custom sale price ticket entry"); };
+                popupContent.appendChild(setCustomSalePriceBtn);
+            }
+
+            // Show popup overlay
+            document.getElementById("popupOverlay").style.display = "flex";
+        }
+
+        // Close the popup
+        function closePopup() {
+            document.getElementById("popupOverlay").style.display = "none";
+        }
+    </script>
+</body>
+</html>
