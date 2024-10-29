@@ -113,6 +113,10 @@
             text-decoration: none;
         }
 
+        .btn-popup-buy-now {
+            background-color: #27ae60;
+        }
+
         .btn-popup-set {
             background-color: #3498db;
         }
@@ -162,11 +166,21 @@
                     { seat: 'A3', price: '110.00' }
                 ];
 
-                // Display available tickets
+                // Display available tickets with 'Buy Now' button
                 availableTickets.forEach(ticket => {
                     const listing = document.createElement('div');
                     listing.className = 'listing';
-                    listing.textContent = `Seat: ${ticket.seat}, Price: $${ticket.price}`;
+                    listing.innerHTML = `Seat: ${ticket.seat}, Price: $${ticket.price}`;
+                    
+                    // Buy Now button for each ticket
+                    const buyNowBtn = document.createElement('button');
+                    buyNowBtn.className = 'btn-popup btn-popup-buy-now';
+                    buyNowBtn.textContent = 'Buy Now';
+                    buyNowBtn.onclick = () => {
+                        alert(`Purchased ticket for seat ${ticket.seat} at $${ticket.price}`);
+                        // Here you would add the logic to process the purchase
+                    };
+                    listing.appendChild(buyNowBtn);
                     popupContent.appendChild(listing);
                 });
 
@@ -174,7 +188,7 @@
                 const setCustomPriceBtn = document.createElement('button');
                 setCustomPriceBtn.className = 'btn-popup btn-popup-set';
                 setCustomPriceBtn.textContent = 'Set Custom Price';
-                setCustomPriceBtn.onclick = () => { alert("Redirect to custom price buy order entry"); };
+                setCustomPriceBtn.onclick = () => { alert("Redirect to custom price entry"); };
                 popupContent.appendChild(setCustomPriceBtn);
 
             } else if (type === 'sell') {
@@ -212,7 +226,7 @@
                 const setCustomSalePriceBtn = document.createElement('button');
                 setCustomSalePriceBtn.className = 'btn-popup btn-popup-set';
                 setCustomSalePriceBtn.textContent = 'Set Custom Sale Price';
-                setCustomSalePriceBtn.onclick = () => { alert("Redirect to custom sale price ticket entry"); };
+                setCustomSalePriceBtn.onclick = () => { alert("Redirect to custom sale price entry"); };
                 popupContent.appendChild(setCustomSalePriceBtn);
             }
 
