@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Game Tickets</title>
     <style>
-        /* Basic styling for layout and positioning */
         body {
             font-family: Arial, sans-serif;
             background-color: #f0f0f0;
@@ -16,14 +15,12 @@
             padding: 20px;
         }
 
-        /* Header */
         h1 {
             font-size: 2em;
             color: #333;
             margin: 20px 0;
         }
 
-        /* Button styles */
         .button-group {
             display: flex;
             justify-content: center;
@@ -48,7 +45,6 @@
             background-color: #e74c3c;
         }
 
-        /* Overlay background */
         .overlay {
             position: fixed;
             top: 0;
@@ -56,13 +52,12 @@
             width: 100%;
             height: 100%;
             background: rgba(0, 0, 0, 0.5);
-            display: none; /* Initially hidden */
+            display: none;
             justify-content: center;
             align-items: center;
             z-index: 1000;
         }
 
-        /* Popup box styling */
         .popup {
             background: #fff;
             padding: 20px;
@@ -79,7 +74,6 @@
             color: #333;
         }
 
-        /* Close button */
         .close-btn {
             position: absolute;
             top: 10px;
@@ -89,7 +83,6 @@
             color: #888;
         }
 
-        /* Listings and Buttons */
         .listing {
             font-size: 1em;
             margin: 10px 0;
@@ -128,7 +121,7 @@
 </head>
 <body>
     <!-- Page Header -->
-    <h1>Tickets for Example Game dd/mm/yyyy</h1>
+    <h1 id="gameTitle">Tickets for Example Game</h1>
 
     <!-- Button Group for Buy and Sell Options -->
     <div class="button-group">
@@ -148,43 +141,48 @@
     </div>
 
     <script>
-        // Show the popup with specific content based on 'Buy' or 'Sell' button click
+        function getQueryParameter(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        function updateGameTitle() {
+            const game = getQueryParameter('game');
+            if (game) {
+                document.getElementById('gameTitle').textContent = `Tickets for ${game} Game`;
+            }
+        }
+
         function showPopup(type) {
             const popupTitle = document.getElementById("popupTitle");
             const popupContent = document.getElementById("popupContent");
 
-            // Reset popup content
             popupContent.innerHTML = "";
 
             if (type === 'buy') {
                 popupTitle.textContent = "Available Tickets";
                 
-                // Sample data for top 3 available tickets
                 const availableTickets = [
                     { seat: 'A1', price: '100.00' },
                     { seat: 'A2', price: '120.00' },
                     { seat: 'A3', price: '110.00' }
                 ];
 
-                // Display available tickets with 'Buy Now' button
                 availableTickets.forEach(ticket => {
                     const listing = document.createElement('div');
                     listing.className = 'listing';
                     listing.innerHTML = `Seat: ${ticket.seat}, Price: $${ticket.price}`;
                     
-                    // Buy Now button for each ticket
                     const buyNowBtn = document.createElement('button');
                     buyNowBtn.className = 'btn-popup btn-popup-buy-now';
                     buyNowBtn.textContent = 'Buy Now';
                     buyNowBtn.onclick = () => {
                         alert(`Purchased ticket for seat ${ticket.seat} at $${ticket.price}`);
-                        // Here you would add the logic to process the purchase
                     };
                     listing.appendChild(buyNowBtn);
                     popupContent.appendChild(listing);
                 });
 
-                // 'Set Custom Price' Button
                 const setCustomPriceBtn = document.createElement('button');
                 setCustomPriceBtn.className = 'btn-popup btn-popup-set';
                 setCustomPriceBtn.textContent = 'Set Custom Price';
@@ -194,14 +192,12 @@
             } else if (type === 'sell') {
                 popupTitle.textContent = "Last 3 Sold Tickets";
 
-                // Sample data for last 3 sold tickets
                 const soldTickets = [
                     { seat: 'B1', price: '90.00' },
                     { seat: 'B2', price: '85.00' },
                     { seat: 'B3', price: '95.00' }
                 ];
 
-                // Calculate and display average price
                 const avgPrice = soldTickets.reduce((sum, ticket) => sum + parseFloat(ticket.price), 0) / soldTickets.length;
                 soldTickets.forEach(ticket => {
                     const listing = document.createElement('div');
@@ -210,19 +206,16 @@
                     popupContent.appendChild(listing);
                 });
 
-                // Display average price
                 const avgPriceDisplay = document.createElement('p');
                 avgPriceDisplay.textContent = `Average Sold Price: $${avgPrice.toFixed(2)}`;
                 popupContent.appendChild(avgPriceDisplay);
 
-                // 'Sell Now' Button
                 const sellNowBtn = document.createElement('a');
                 sellNowBtn.className = 'btn-popup btn-popup-sell-now';
                 sellNowBtn.textContent = 'Sell Now';
-                sellNowBtn.href = "#"; // Redirect link for future available buy orders page
+                sellNowBtn.href = "#";
                 popupContent.appendChild(sellNowBtn);
 
-                // 'Set Custom Sale Price' Button
                 const setCustomSalePriceBtn = document.createElement('button');
                 setCustomSalePriceBtn.className = 'btn-popup btn-popup-set';
                 setCustomSalePriceBtn.textContent = 'Set Custom Sale Price';
@@ -230,14 +223,14 @@
                 popupContent.appendChild(setCustomSalePriceBtn);
             }
 
-            // Show popup overlay
             document.getElementById("popupOverlay").style.display = "flex";
         }
 
-        // Close the popup
         function closePopup() {
             document.getElementById("popupOverlay").style.display = "none";
         }
+
+        updateGameTitle();
     </script>
 </body>
 </html>
