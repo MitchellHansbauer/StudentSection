@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout for [Game Name]</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        h1 {
+            color: #333;
+        }
+        
+        .game-info, .checkout-summary {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            width: 80%;
+            max-width: 600px;
+        }
+        
+        .checkout-summary {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .btn {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        .btn.cancel {
+            background-color: #e74c3c;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Checkout for [Game Name]</h1>
+
+    <div class="game-info">
+        <h2>Game Details</h2>
+        <p>Date: [Game Date]</p>
+        <p>Time: [Game Time]</p>
+        <p>Opponent: [Opponent Name]</p>
+        <p>Order #: [Generated Order #]</p>
+        <p>Status: Ticket reserved for [time limit] minutes</p>
+    </div>
+
+    <div class="checkout-summary">
+        <h2>Order Summary</h2>
+        <p>Ticket Price: $[Ticket Price]</p>
+        <p>Fees: $[Fees]</p>
+        <p>Total Cost: $[Total Cost]</p>
+
+        <h2>Payment</h2>
+        <p>Please complete your purchase through our secure payment gateway.</p>
+        <!-- Here you can integrate the Stripe API payment form -->
+
+        <button class="btn">Complete Purchase</button>
+        <button class="btn cancel">Cancel</button>
+    </div>
+
+    <footer>
+        <p>Terms & Conditions | Purchase Policies | Contact Us</p>
+    </footer>
+</body>
+</html>
