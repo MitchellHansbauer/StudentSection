@@ -1,49 +1,48 @@
--- Create Users table
-CREATE TABLE Users (
+-- Users table to store user information and Paciolan account ID
+CREATE TABLE IF NOT EXISTS Users (
     user_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    student_id TEXT UNIQUE NOT NULL,
     first_name TEXT NOT NULL,
     last_name TEXT NOT NULL,
     email TEXT UNIQUE NOT NULL,
-    password_hash TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-); 
-
-
-
--- Create Events table
-CREATE TABLE Events (
-    event_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    event_name TEXT NOT NULL,
-    event_date DATE NOT NULL,
-    event_time TIME,
-    location TEXT NOT NULL,
+    paciolan_account_id TEXT UNIQUE NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create Tickets table
-CREATE TABLE Tickets (
+-- Tickets table to store ticket information
+CREATE TABLE IF NOT EXISTS Tickets (
     ticket_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    event_id INTEGER NOT NULL,
-    owner_id INTEGER NOT NULL,
+    event_code TEXT NOT NULL,
+    event_name TEXT NOT NULL,
+    season_code TEXT NOT NULL,
+    section TEXT NOT NULL,
+    row TEXT NOT NULL,
+    seat_number TEXT NOT NULL,
     barcode TEXT UNIQUE,
-    unique_id TEXT UNIQUE,
-    seat_number TEXT,
     price REAL NOT NULL,
-    price_level TEXT,
-    price_type TEXT,
-    status TEXT CHECK(status IN ('Available', 'Locked', 'Sold')) DEFAULT 'Available',
-    print_status TEXT CHECK(print_status IN ('Not Issued', 'Issued')) DEFAULT 'Not Issued',
+    is_transferrable BOOLEAN DEFAULT 0,
+    is_listed BOOLEAN DEFAULT 0,
+    owner_id INTEGER,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (event_id) REFERENCES Events(event_id),
     FOREIGN KEY (owner_id) REFERENCES Users(user_id)
 );
 
--- Create Orders table to handle all transactions, including resales
-CREATE TABLE Orders (
+-- Listings table to store ticket listings for resale
+CREATE TABLE IF NOT EXISTS Listings (
+    listing_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ticket_id INTEGER NOT NULL,
+    seller_id INTEGER NOT NULL,
+    price REAL NOT NULL,
+    status TEXT CHECK(status IN ('Available', 'Sold', 'Cancelled')) DEFAULT 'Available',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (ticket_id) REFERENCES Tickets(ticket_id),
+    FOREIGN KEY (seller_id) REFERENCES Users(user_id)
+);
+
+-- Orders table to track ticket orders
+CREATE TABLE IF NOT EXISTS Orders (
     order_id INTEGER PRIMARY KEY AUTOINCREMENT,
     ticket_id INTEGER NOT NULL,
     seller_id INTEGER,
@@ -54,13 +53,28 @@ CREATE TABLE Orders (
     transaction_date DATETIME DEFAULT CURRENT_TIMESTAMP,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    listing_id INTEGER,
     FOREIGN KEY (ticket_id) REFERENCES Tickets(ticket_id),
     FOREIGN KEY (seller_id) REFERENCES Users(user_id),
-    FOREIGN KEY (buyer_id) REFERENCES Users(user_id)
+    FOREIGN KEY (buyer_id) REFERENCES Users(user_id),
+    FOREIGN KEY (listing_id) REFERENCES Listings(listing_id)
 );
 
--- Create API_Logs table to track API interactions
-CREATE TABLE API_Logs (
+-- Transfers table to track ticket transfers
+CREATE TABLE IF NOT EXISTS Transfers (
+    transfer_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ticket_id INTEGER NOT NULL,
+    transfer_status TEXT CHECK(transfer_status IN ('Pending', 'Accepted', 'Failed')) DEFAULT 'Pending',
+    recipient_email TEXT NOT NULL,
+    transfer_id_api TEXT UNIQUE,
+    transfer_url TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (ticket_id) REFERENCES Tickets(ticket_id)
+);
+
+-- API_Logs table to track API interactions
+CREATE TABLE IF NOT EXISTS API_Logs (
     log_id INTEGER PRIMARY KEY AUTOINCREMENT,
     request_type TEXT NOT NULL,
     response_code INTEGER NOT NULL,
