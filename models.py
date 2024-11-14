@@ -1,7 +1,12 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 db = SQLAlchemy()
+
+def current_time_est():
+    """Returns the current time in Eastern Standard Time (EST)."""
+    return datetime.now(ZoneInfo('America/New_York'))
 
 class User(db.Model):
     __tablename__ = 'Users'
@@ -10,8 +15,8 @@ class User(db.Model):
     last_name = db.Column(db.String(50), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     paciolan_account_id = db.Column(db.String(120), unique=True, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=current_time_est)
+    updated_at = db.Column(db.DateTime, default=current_time_est, onupdate=current_time_est)
     tickets = db.relationship('Ticket', backref='owner', lazy=True)
     sales = db.relationship('Transaction', foreign_keys='Transaction.seller_id', backref='seller', lazy=True)
     purchases = db.relationship('Transaction', foreign_keys='Transaction.buyer_id', backref='buyer', lazy=True)
@@ -30,8 +35,8 @@ class Ticket(db.Model):
     is_transferrable = db.Column(db.Boolean, default=False)
     is_listed = db.Column(db.Boolean, default=False)
     owner_id = db.Column(db.Integer, db.ForeignKey('Users.user_id'))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=current_time_est)
+    updated_at = db.Column(db.DateTime, default=current_time_est, onupdate=current_time_est)
     transactions = db.relationship('Transaction', backref='ticket', lazy=True)
 
 class Listing(db.Model):
@@ -41,11 +46,11 @@ class Listing(db.Model):
     seller_id = db.Column(db.Integer, db.ForeignKey('Users.user_id'), nullable=False)
     price = db.Column(db.Float, nullable=False)
     status = db.Column(db.String(20), default='Available')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=current_time_est)
+    updated_at = db.Column(db.DateTime, default=current_time_est, onupdate=current_time_est)
     ticket = db.relationship('Ticket', backref='listing', lazy=True)
     seller = db.relationship('User', backref='listings', lazy=True)
-    
+
 class Transaction(db.Model):
     __tablename__ = 'Transactions'
     transaction_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -59,9 +64,9 @@ class Transaction(db.Model):
     recipient_email = db.Column(db.String(120), nullable=False)
     transfer_id_api = db.Column(db.String(120), unique=True)
     transfer_url = db.Column(db.String(255))
-    transaction_date = db.Column(db.DateTime, default=datetime.utcnow)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    transaction_date = db.Column(db.DateTime, default=current_time_est)
+    created_at = db.Column(db.DateTime, default=current_time_est)
+    updated_at = db.Column(db.DateTime, default=current_time_est, onupdate=current_time_est)
 
 class APILog(db.Model):
     __tablename__ = 'API_Logs'
@@ -69,4 +74,4 @@ class APILog(db.Model):
     request_type = db.Column(db.String(50), nullable=False)
     response_code = db.Column(db.Integer, nullable=False)
     status = db.Column(db.String(20), default='Success')
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=current_time_est)
