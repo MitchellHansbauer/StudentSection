@@ -8,7 +8,7 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///student_section.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
-CORS(app)
+CORS(app)  # Enable CORS
 
 MOCK_API_BASE_URL = "http://localhost:3003"
 
@@ -63,14 +63,14 @@ def list_tickets():
         return jsonify({"error": "Failed to retrieve tickets"}), response.status_code
 
     response_data = response.json()
-    season = response_data.get("season", {})
-    season_code = season.get("code", "Unknown Season")
     tickets_data = response_data.get("orderLineItems", [])
 
     for ticket_data in tickets_data:
         event_item = ticket_data.get("item", {})
         event_code = event_item.get("code", "Unknown Event")
         event_name = event_item.get("name", "Unknown Event Name")
+        season = ticket_data.get("season", {})
+        season_code = season.get("code", "Unknown Season")
 
         events = ticket_data.get("events", [])
         for event in events:
@@ -110,22 +110,111 @@ def list_tickets():
     db.session.commit()
     return jsonify({"message": "Tickets listed successfully"}), 201
 
-# Initiate transfer and create a transaction record
-@app.route('/transactions/transfer', methods=['POST'])
-def initiate_transfer():
-    ticket_id = request.json.get("ticket_id")
-    buyer_id = request.json.get("buyer_id")
-    resale_price = request.json.get("resale_price")
+# Endpoint to get tickets for a user
+@app.route('/users/<int:user_id>/tickets', methods=['GET'])
+def get_user_tickets(user_id):
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
 
-    # Retrieve seller and buyer details
+    tickets = Ticket.query.filter_by(owner_id=user_id).all()
+    tickets_list = []
+    for ticket in tickets:
+        tickets_list.append({
+            "ticket_id": ticket.ticket_id,
+            "event_name": ticket.event_name,
+            "section": ticket.section,
+            "row": ticket.row,
+            "seat_number": ticket.seat_number,
+            "price": ticket.price,
+            "is_listed": ticket.is_listed
+        })
+    return jsonify({"tickets": tickets_list}), 200
+
+# Endpoint to get user by email
+@app.route('/users/email/<string:email>', methods=['GET'])
+def get_user_by_email(email):
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    return jsonify({
+        "user_id": user.user_id,
+        "first_name": user.first_name,
+        "last_name": user.last_name
+    }), 200
+
+# Endpoint to create a ticket listing
+@app.route('/listings/create', methods=['POST'])
+def create_listing():
+    ticket_id = request.json.get('ticket_id')
+    seller_id = request.json.get('seller_id')
+    price = request.json.get('price')
+
+    # Retrieve the ticket and seller
     ticket = Ticket.query.get(ticket_id)
     if not ticket:
-        return jsonify({"error": "Ticket not found"}), 404
+        return jsonify({'error': 'Ticket not found'}), 404
 
-    seller = User.query.get(ticket.owner_id)
+    if ticket.owner_id != seller_id:
+        return jsonify({'error': 'You do not own this ticket'}), 403
+
+    if ticket.is_listed:
+        return jsonify({'error': 'Ticket is already listed'}), 400
+
+    # Create the listing
+    new_listing = Listing(
+        ticket_id=ticket_id,
+        seller_id=seller_id,
+        price=price,
+        status='Available'
+    )
+    ticket.is_listed = True  # Update ticket status
+    db.session.add(new_listing)
+    db.session.commit()
+
+    return jsonify({'message': 'Ticket listed for sale successfully', 'listing_id': new_listing.listing_id}), 201
+
+# Endpoint to get all available listings
+@app.route('/listings', methods=['GET'])
+def get_listings():
+    listings = Listing.query.filter_by(status='Available').all()
+    listings_data = []
+
+    for listing in listings:
+        ticket = Ticket.query.get(listing.ticket_id)
+        seller = User.query.get(listing.seller_id)
+        listings_data.append({
+            'listing_id': listing.listing_id,
+            'ticket_id': ticket.ticket_id,
+            'event_name': ticket.event_name,
+            'section': ticket.section,
+            'row': ticket.row,
+            'seat_number': ticket.seat_number,
+            'price': listing.price,
+            'seller_name': f"{seller.first_name} {seller.last_name}"
+        })
+
+    return jsonify({'listings': listings_data}), 200
+
+# Endpoint to purchase a ticket
+@app.route('/transactions/purchase', methods=['POST'])
+def purchase_ticket():
+    listing_id = request.json.get('listing_id')
+    buyer_id = request.json.get('buyer_id')
+
+    # Retrieve listing, ticket, seller, and buyer
+    listing = Listing.query.get(listing_id)
+    if not listing or listing.status != 'Available':
+        return jsonify({'error': 'Listing not available'}), 404
+
+    ticket = Ticket.query.get(listing.ticket_id)
+    seller = User.query.get(listing.seller_id)
     buyer = User.query.get(buyer_id)
     if not buyer:
-        return jsonify({"error": "Buyer not found"}), 404
+        return jsonify({'error': 'Buyer not found'}), 404
+
+    resale_price = listing.price
 
     # Authenticate with the mock API to get the token
     token = get_mock_token()
@@ -152,68 +241,46 @@ def initiate_transfer():
     if response.status_code == 200:
         transfer_data = response.json()
         new_transaction = Transaction(
-            ticket_id=ticket_id,
+            ticket_id=ticket.ticket_id,
             seller_id=seller.user_id,
-            buyer_id=buyer_id,
+            buyer_id=buyer.user_id,
             resale_price=resale_price,
             transaction_amount=resale_price,  # Placeholder for real calculations
             recipient_email=buyer.email,
             transfer_id_api=transfer_data.get("transferId"),
             transfer_url=transfer_data.get("url"),
-            transaction_status="Pending",
-            transfer_status="Pending"
+            transaction_status="Completed",
+            transfer_status="Accepted"
         )
         db.session.add(new_transaction)
 
-        # Update ticket ownership
-        ticket.owner_id = buyer_id
-        ticket.is_listed = False  # Assuming the ticket is no longer listed
+        # Update ticket ownership and listing status
+        ticket.owner_id = buyer.user_id
+        ticket.is_listed = False
+        listing.status = 'Sold'
         db.session.commit()
 
         return jsonify({
-            "message": "Transfer initiated",
-            "transaction_id": new_transaction.transaction_id,
-            "transfer_url": new_transaction.transfer_url
+            "message": "Purchase successful, transfer completed",
+            "transaction_id": new_transaction.transaction_id
         }), 201
     else:
         return jsonify({"error": "Failed to initiate transfer", "details": response.text}), response.status_code
 
-# Confirm transfer acceptance
-@app.route('/transactions/<int:transaction_id>/confirm', methods=['POST'])
-def confirm_transfer(transaction_id):
-    transaction = Transaction.query.get(transaction_id)
-    if not transaction:
-        return jsonify({"error": "Transaction not found"}), 404
+# Endpoint to get user information
+@app.route('/users/<int:user_id>', methods=['GET'])
+def get_user(user_id):
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
 
-    # Authenticate with the mock API to get the token
-    token = get_mock_token()
-    if not token:
-        return jsonify({"error": "Unable to authenticate with mock Paciolan API"}), 500
-
-    # Simulate transfer acceptance with mock API
-    url = f"{MOCK_API_BASE_URL}/v1/tickets/transfer/accept"
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json",
-        "Accept": "application/json"
-    }
-    data = {
-        "transferId": transaction.transfer_id_api,
-        "toPatronId": transaction.buyer.paciolan_account_id
-    }
-    response = requests.post(url, headers=headers, json=data)
-    status = 'Success' if response.status_code == 200 else 'Error'
-    log_api_interaction(f'POST {url}', response.status_code, status)
-
-    if response.status_code == 200:
-        # Update transaction status
-        transaction.transfer_status = "Accepted"
-        transaction.transaction_status = "Completed"
-        transaction.updated_at = datetime.utcnow()
-        db.session.commit()
-        return jsonify({"message": "Transfer confirmed and payment processed"}), 200
-    else:
-        return jsonify({"error": "Failed to confirm transfer", "details": response.text}), response.status_code
+    return jsonify({
+        "user_id": user.user_id,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "email": user.email,
+        "paciolan_account_id": user.paciolan_account_id
+    }), 200
 
 if __name__ == '__main__':
     app.run(debug=True)
