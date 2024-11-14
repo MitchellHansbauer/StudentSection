@@ -41,37 +41,26 @@ CREATE TABLE IF NOT EXISTS Listings (
     FOREIGN KEY (seller_id) REFERENCES Users(user_id)
 );
 
--- Orders table to track ticket orders
-CREATE TABLE IF NOT EXISTS Orders (
-    order_id INTEGER PRIMARY KEY AUTOINCREMENT,
+CREATE TABLE IF NOT EXISTS Transactions (
+    transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
     ticket_id INTEGER NOT NULL,
-    seller_id INTEGER,
-    buyer_id INTEGER,
-    resale_price REAL,
-    transaction_amount REAL NOT NULL,
-    status TEXT CHECK(status IN ('Pending', 'Completed', 'Failed')) DEFAULT 'Pending',
+    seller_id INTEGER NOT NULL,
+    buyer_id INTEGER NOT NULL,
+    resale_price REAL NOT NULL,
+    transaction_amount REAL NOT NULL, -- Final amount after any fees, etc.
+    transaction_status TEXT CHECK(transaction_status IN ('Pending', 'Completed', 'Failed')) DEFAULT 'Pending',
+    transfer_status TEXT CHECK(transfer_status IN ('Pending', 'Accepted', 'Failed')) DEFAULT 'Pending',
+    recipient_email TEXT NOT NULL,
+    transfer_id_api TEXT UNIQUE, -- Store the transfer ID returned from Paciolan API
+    transfer_url TEXT, -- URL for recipient to accept the transfer
     transaction_date DATETIME DEFAULT CURRENT_TIMESTAMP,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    listing_id INTEGER,
     FOREIGN KEY (ticket_id) REFERENCES Tickets(ticket_id),
     FOREIGN KEY (seller_id) REFERENCES Users(user_id),
-    FOREIGN KEY (buyer_id) REFERENCES Users(user_id),
-    FOREIGN KEY (listing_id) REFERENCES Listings(listing_id)
+    FOREIGN KEY (buyer_id) REFERENCES Users(user_id)
 );
 
--- Transfers table to track ticket transfers
-CREATE TABLE IF NOT EXISTS Transfers (
-    transfer_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    ticket_id INTEGER NOT NULL,
-    transfer_status TEXT CHECK(transfer_status IN ('Pending', 'Accepted', 'Failed')) DEFAULT 'Pending',
-    recipient_email TEXT NOT NULL,
-    transfer_id_api TEXT UNIQUE,
-    transfer_url TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (ticket_id) REFERENCES Tickets(ticket_id)
-);
 
 -- API_Logs table to track API interactions
 CREATE TABLE IF NOT EXISTS API_Logs (
