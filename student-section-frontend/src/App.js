@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import TicketsList from './components/TicketsList';
 import Marketplace from './components/Marketplace';
 import Navbar from './components/Navbar';
@@ -9,11 +9,11 @@ function App() {
     <Router>
       <div>
         <Navbar />
-        <Switch>
-          <Route exact path="/" component={TicketsList} />
-          <Route path="/marketplace" component={Marketplace} />
-          {/* Future routes for login, signup, etc. */}
-        </Switch>
+        <Routes>
+          <Route path="/" element={<TicketsList />} />
+          <Route path="/marketplace" element={<Marketplace />} />
+          {/* Other routes */}
+        </Routes>
       </div>
     </Router>
   );
