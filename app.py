@@ -46,9 +46,9 @@ def list_tickets():
     user_id = request.json.get("user_id")
     season_code = request.json.get("season_code")
 
-    # user = User.query.get(user_id)
-    # if not user:
-    #     return jsonify({"error": "User not found"}), 404
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
 
     # Authenticate with the mock API to get the token
     token = get_mock_token()
