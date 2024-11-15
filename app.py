@@ -24,6 +24,7 @@ def log_api_interaction(request_type, response_code, status):
 
 # Utility function to authenticate with the mock Paciolan API
 def get_mock_token():
+    print("get_token endpoint was called")
     url = f"{MOCK_API_BASE_URL}/v1/auth/token"
     headers = {
         "Content-Type": "application/json",
@@ -41,12 +42,13 @@ def get_mock_token():
 # Endpoint to retrieve and store tickets for a user
 @app.route('/tickets/list', methods=['POST'])
 def list_tickets():
+    print("list_tickets endpoint was called")
     user_id = request.json.get("user_id")
     season_code = request.json.get("season_code")
 
-    user = User.query.get(user_id)
-    if not user:
-        return jsonify({"error": "User not found"}), 404
+    # user = User.query.get(user_id)
+    # if not user:
+    #     return jsonify({"error": "User not found"}), 404
 
     # Authenticate with the mock API to get the token
     token = get_mock_token()
