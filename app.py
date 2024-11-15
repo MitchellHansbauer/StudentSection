@@ -25,7 +25,12 @@ def log_api_interaction(request_type, response_code, status):
 # Utility function to authenticate with the mock Paciolan API
 def get_mock_token():
     url = f"{MOCK_API_BASE_URL}/v1/auth/token"
-    headers = {"Content-Type": "application/json"}
+    headers = {
+        "Content-Type": "application/json",
+        "User-Agent": "MyApplication/1.0",
+        "Accept": "application/json",
+        "Request-ID": "d4f55f60-1a6d-4a3c-8f36-1f4e4a3a6b6c"
+    }
     response = requests.post(url, headers=headers)
     status = 'Success' if response.status_code == 200 else 'Error'
     log_api_interaction('POST /v1/auth/token', response.status_code, status)
@@ -51,9 +56,13 @@ def list_tickets():
     # Get tickets for the user from the mock API
     url = f"{MOCK_API_BASE_URL}/v2/patron/{user.paciolan_account_id}/orders/{season_code}"
     headers = {
-        "Authorization": f"Bearer {token}",
-        "Accept": "application/json",
-        "Content-Type": "application/json"
+        "Authorization": "MockAccessToken12345",
+        "PAC-Application-ID": "application.id",
+        "PAC-API-Key": "mock.api.key",
+        "PAC-Channel-Code": "mock.channel.code",
+        "PAC-Organization-ID": "OrganizationID",
+        "User-Agent": "StudentSection/v1.0",
+        "Accept": "application/json"
     }
     response = requests.get(url, headers=headers)
     status = 'Success' if response.status_code == 200 else 'Error'
@@ -69,7 +78,7 @@ def list_tickets():
         event_item = ticket_data.get("item", {})
         event_code = event_item.get("code", "Unknown Event")
         event_name = event_item.get("name", "Unknown Event Name")
-        season = ticket_data.get("season", {})
+        season = response_data.get("season", {})
         season_code = season.get("code", "Unknown Season")
 
         events = ticket_data.get("events", [])
@@ -224,14 +233,19 @@ def purchase_ticket():
     # Simulate transfer initiation with mock API
     url = f"{MOCK_API_BASE_URL}/v1/tickets/transfer"
     headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json",
-        "Accept": "application/json"
+        "Authorization": "MockAccessToken12345",
+        "PAC-Application-ID": "application.id",
+        "PAC-API-Key": "mock.api.key",
+        "PAC-Channel-Code": "mock.channel.code",
+        "PAC-Organization-ID": "OrganizationID",
+        "User-Agent": "StudentSection/v1.0",
+        "Accept": "application/json",
+        "Content-Type": "application/json"
     }
     data = {
         "fromPatronId": seller.paciolan_account_id,
         "toPatronId": buyer.paciolan_account_id,
-        "ticketIds": [ticket.barcode],  # Adjust according to API expectations
+        "ticketIds": [ticket.barcode],
         "recipientEmail": buyer.email
     }
     response = requests.post(url, headers=headers, json=data)
@@ -245,7 +259,7 @@ def purchase_ticket():
             seller_id=seller.user_id,
             buyer_id=buyer.user_id,
             resale_price=resale_price,
-            transaction_amount=resale_price,  # Placeholder for real calculations
+            transaction_amount=resale_price,
             recipient_email=buyer.email,
             transfer_id_api=transfer_data.get("transferId"),
             transfer_url=transfer_data.get("url"),
@@ -283,4 +297,6 @@ def get_user(user_id):
     }), 200
 
 if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()
     app.run(debug=True)
