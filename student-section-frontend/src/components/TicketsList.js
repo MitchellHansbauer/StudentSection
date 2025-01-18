@@ -50,6 +50,26 @@ function TicketsList() {
     }
   };
 
+  const handleUnlistTicket = (ticketId) => {
+    axios.delete('http://localhost:5000/listings/delete', {
+      data: { ticket_id: ticketId, user_id: userId }
+    })
+    .then(res => {
+      setMessage(res.data.message);
+      // Update ticket list to reflect the unlisted ticket
+      setTickets(tickets.map(ticket => {
+        if (ticket.ticket_id === ticketId) {
+          return { ...ticket, is_listed: false };
+        }
+        return ticket;
+      }));
+    })
+    .catch(error => {
+      setMessage(error.response.data.error);
+      console.error(error);
+    });
+  };
+
   return (
     <div>
       <h2>My Tickets</h2>
@@ -82,6 +102,11 @@ function TicketsList() {
                   {!ticket.is_listed && (
                     <button onClick={() => handleListTicket(ticket.ticket_id)}>
                       List for Sale
+                    </button>
+                  )}
+                  {ticket.is_listed && (
+                    <button onClick={() => handleUnlistTicket(ticket.ticket_id)}>
+                      Refund Ticket
                     </button>
                   )}
                 </td>
