@@ -298,7 +298,30 @@ def get_user(user_id):
         "paciolan_account_id": user.paciolan_account_id
     }), 200
 
+@app.route('/listings/delete', methods=['DELETE'])
+def delete_listing():
+    ticket_id = request.json.get('ticket_id')
+    user_id = request.json.get('user_id')  # Ensure the user owns the ticket
+
+    # Retrieve the listing and ticket
+    listing = Listing.query.filter_by(ticket_id=ticket_id).first()
+    ticket = Ticket.query.get(ticket_id)
+
+    if not ticket or not listing:
+        return jsonify({'error': 'Listing or ticket not found'}), 404
+
+    if ticket.owner_id != user_id:
+        return jsonify({'error': 'Unauthorized action'}), 403
+
+    # Delete the listing and update the ticket status
+    db.session.delete(listing)
+    ticket.is_listed = False
+    db.session.commit()
+
+    return jsonify({'message': 'Listing deleted successfully'}), 200
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     app.run(debug=True)
+
