@@ -1,0 +1,497 @@
+{
+    "orderDate": "2024-07-15",
+    "orderItemValue": 1800,
+    "orderPayments": 1800,
+    "orderPriority": null,
+    "activity": {
+        "code": "FB",
+        "name": "Football"
+    },
+    "season": {
+        "code": "FB24",
+        "name": "Football 2024"
+    },
+    "pagination": {
+        "currentPage": 1,
+        "hasNextPage": false,
+        "hasPreviousPage": false,
+        "pageSize": 3000,
+        "totalItems": 12,
+        "totalPages": 1
+    },
+    "tags": [
+        "FULL_SEASON"
+    ],
+    "userDefinedFields": [],
+    "orderCharges": [],
+    "orderLineItems": [
+        {
+            "sequence": "FB24:500101:1",
+            "lastUpdated": "2024-08-01T10:00:00-07:00",
+            "itemBasis": "SINGLE",
+            "itemQuantity": 1,
+            "itemUnitPrice": 75,
+            "priceType": {
+                "code": "R",
+                "name": "Regular",
+                "auditKind": "FULL",
+                "class": null
+            },
+            "itemExtendedPrice": 75,
+            "item": {
+                "code": "F01",
+                "name": "vs Towson"
+            },
+            "itemDate": "2024-08-31",
+            "events": [
+                {
+                    "event": {
+                        "code": "F01",
+                        "name": "Football Game 1"
+                    },
+                    "priceLevel": 1,
+                    "price": 75,
+                    "isTransferrable": true,
+                    "seats": [
+                        {
+                            "section": "N:110",
+                            "row": "15",
+                            "seat": "20",
+                            "barcode": "UC0001",
+                            "ticketID": "TKT0001"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "sequence": "FB24:500101:2",
+            "lastUpdated": "2024-08-01T10:00:00-07:00",
+            "itemBasis": "SINGLE",
+            "itemQuantity": 1,
+            "itemUnitPrice": 80,
+            "priceType": {
+                "code": "R",
+                "name": "Regular",
+                "auditKind": "FULL",
+                "class": null
+            },
+            "itemExtendedPrice": 80,
+            "item": {
+                "code": "F02",
+                "name": "vs Pittsburgh"
+            },
+            "itemDate": "2024-09-07",
+            "events": [
+                {
+                    "event": {
+                        "code": "F02",
+                        "name": "Football Game 2"
+                    },
+                    "priceLevel": 1,
+                    "price": 80,
+                    "isTransferrable": true,
+                    "seats": [
+                        {
+                            "section": "N:112",
+                            "row": "10",
+                            "seat": "15",
+                            "barcode": "UC0002",
+                            "ticketID": "TKT0002"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "sequence": "FB24:500101:3",
+            "lastUpdated": "2024-08-01T10:00:00-07:00",
+            "itemBasis": "SINGLE",
+            "itemQuantity": 1,
+            "itemUnitPrice": 90,
+            "priceType": {
+                "code": "R",
+                "name": "Regular",
+                "auditKind": "FULL",
+                "class": null
+            },
+            "itemExtendedPrice": 90,
+            "item": {
+                "code": "F03",
+                "name": "at Miami (OH)"
+            },
+            "itemDate": "2024-09-14",
+            "events": [
+                {
+                    "event": {
+                        "code": "F03",
+                        "name": "Football Game 3"
+                    },
+                    "priceLevel": 1,
+                    "price": 90,
+                    "isTransferrable": true,
+                    "seats": [
+                        {
+                            "section": "A:101",
+                            "row": "5",
+                            "seat": "10",
+                            "barcode": "UC0003",
+                            "ticketID": "TKT0003"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "sequence": "FB24:500101:4",
+            "lastUpdated": "2024-08-01T10:00:00-07:00",
+            "itemBasis": "SINGLE",
+            "itemQuantity": 1,
+            "itemUnitPrice": 85,
+            "priceType": {
+                "code": "R",
+                "name": "Regular",
+                "auditKind": "FULL",
+                "class": null
+            },
+            "itemExtendedPrice": 85,
+            "item": {
+                "code": "F04",
+                "name": "vs Houston"
+            },
+            "itemDate": "2024-09-21",
+            "events": [
+                {
+                    "event": {
+                        "code": "F04",
+                        "name": "Football Game 4"
+                    },
+                    "priceLevel": 1,
+                    "price": 85,
+                    "isTransferrable": true,
+                    "seats": [
+                        {
+                            "section": "S:130",
+                            "row": "10",
+                            "seat": "8",
+                            "barcode": "UC0004",
+                            "ticketID": "TKT0004"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "sequence": "FB24:500101:5",
+            "lastUpdated": "2024-08-01T10:00:00-07:00",
+            "itemBasis": "SINGLE",
+            "itemQuantity": 1,
+            "itemUnitPrice": 100,
+            "priceType": {
+                "code": "R",
+                "name": "Regular",
+                "auditKind": "FULL",
+                "class": null
+            },
+            "itemExtendedPrice": 100,
+            "item": {
+                "code": "F05",
+                "name": "at Texas Tech"
+            },
+            "itemDate": "2024-09-28",
+            "events": [
+                {
+                    "event": {
+                        "code": "F05",
+                        "name": "Football Game 5"
+                    },
+                    "priceLevel": 1,
+                    "price": 100,
+                    "isTransferrable": true,
+                    "seats": [
+                        {
+                            "section": "B:210",
+                            "row": "15",
+                            "seat": "5",
+                            "barcode": "UC0005",
+                            "ticketID": "TKT0005"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "sequence": "FB24:500101:6",
+            "lastUpdated": "2024-08-01T10:00:00-07:00",
+            "itemBasis": "SINGLE",
+            "itemQuantity": 1,
+            "itemUnitPrice": 95,
+            "priceType": {
+                "code": "R",
+                "name": "Regular",
+                "auditKind": "FULL",
+                "class": null
+            },
+            "itemExtendedPrice": 95,
+            "item": {
+                "code": "F06",
+                "name": "at UCF"
+            },
+            "itemDate": "2024-10-12",
+            "events": [
+                {
+                    "event": {
+                        "code": "F06",
+                        "name": "Football Game 6"
+                    },
+                    "priceLevel": 1,
+                    "price": 95,
+                    "isTransferrable": true,
+                    "seats": [
+                        {
+                            "section": "E:220",
+                            "row": "30",
+                            "seat": "10",
+                            "barcode": "UC0006",
+                            "ticketID": "TKT0006"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "sequence": "FB24:500101:7",
+            "lastUpdated": "2024-08-01T10:00:00-07:00",
+            "itemBasis": "SINGLE",
+            "itemQuantity": 1,
+            "itemUnitPrice": 85,
+            "priceType": {
+                "code": "R",
+                "name": "Regular",
+                "auditKind": "FULL",
+                "class": null
+            },
+            "itemExtendedPrice": 85,
+            "item": {
+                "code": "F07",
+                "name": "vs Arizona State"
+            },
+            "itemDate": "2024-10-19",
+            "events": [
+                {
+                    "event": {
+                        "code": "F07",
+                        "name": "Football Game 7"
+                    },
+                    "priceLevel": 1,
+                    "price": 85,
+                    "isTransferrable": true,
+                    "seats": [
+                        {
+                            "section": "W:104",
+                            "row": "20",
+                            "seat": "5",
+                            "barcode": "UC0007",
+                            "ticketID": "TKT0007"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "sequence": "FB24:500101:8",
+            "lastUpdated": "2024-08-01T10:00:00-07:00",
+            "itemBasis": "SINGLE",
+            "itemQuantity": 1,
+            "itemUnitPrice": 90,
+            "priceType": {
+                "code": "R",
+                "name": "Regular",
+                "auditKind": "FULL",
+                "class": null
+            },
+            "itemExtendedPrice": 90,
+            "item": {
+                "code": "F08",
+                "name": "at Colorado"
+            },
+            "itemDate": "2024-10-26",
+            "events": [
+                {
+                    "event": {
+                        "code": "F08",
+                        "name": "Football Game 8"
+                    },
+                    "priceLevel": 1,
+                    "price": 90,
+                    "isTransferrable": true,
+                    "seats": [
+                        {
+                            "section": "C:205",
+                            "row": "12",
+                            "seat": "12",
+                            "barcode": "UC0008",
+                            "ticketID": "TKT0008"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "sequence": "FB24:500101:9",
+            "lastUpdated": "2024-08-01T10:00:00-07:00",
+            "itemBasis": "SINGLE",
+            "itemQuantity": 1,
+            "itemUnitPrice": 110,
+            "priceType": {
+                "code": "R",
+                "name": "Regular",
+                "auditKind": "FULL",
+                "class": null
+            },
+            "itemExtendedPrice": 110,
+            "item": {
+                "code": "F09",
+                "name": "vs West Virginia"
+            },
+            "itemDate": "2024-11-09",
+            "events": [
+                {
+                    "event": {
+                        "code": "F09",
+                        "name": "Football Game 9"
+                    },
+                    "priceLevel": 1,
+                    "price": 110,
+                    "isTransferrable": true,
+                    "seats": [
+                        {
+                            "section": "VIP:200",
+                            "row": "A",
+                            "seat": "1",
+                            "barcode": "UC0009",
+                            "ticketID": "TKT0009"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "sequence": "FB24:500101:10",
+            "lastUpdated": "2024-08-01T10:00:00-07:00",
+            "itemBasis": "SINGLE",
+            "itemQuantity": 1,
+            "itemUnitPrice": 95,
+            "priceType": {
+                "code": "R",
+                "name": "Regular",
+                "auditKind": "FULL",
+                "class": null
+            },
+            "itemExtendedPrice": 95,
+            "item": {
+                "code": "F010",
+                "name": "at Iowa State"
+            },
+            "itemDate": "2024-11-16",
+            "events": [
+                {
+                    "event": {
+                        "code": "F010",
+                        "name": "Football Game 10"
+                    },
+                    "priceLevel": 1,
+                    "price": 95,
+                    "isTransferrable": true,
+                    "seats": [
+                        {
+                            "section": "G:305",
+                            "row": "25",
+                            "seat": "6",
+                            "barcode": "UC00010",
+                            "ticketID": "TKT00010"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "sequence": "FB24:500101:11",
+            "lastUpdated": "2024-08-01T10:00:00-07:00",
+            "itemBasis": "SINGLE",
+            "itemQuantity": 1,
+            "itemUnitPrice": 90,
+            "priceType": {
+                "code": "R",
+                "name": "Regular",
+                "auditKind": "FULL",
+                "class": null
+            },
+            "itemExtendedPrice": 90,
+            "item": {
+                "code": "F011",
+                "name": "at Kansas State"
+            },
+            "itemDate": "2024-11-23",
+            "events": [
+                {
+                    "event": {
+                        "code": "F011",
+                        "name": "Football Game 11"
+                    },
+                    "priceLevel": 1,
+                    "price": 90,
+                    "isTransferrable": true,
+                    "seats": [
+                        {
+                            "section": "H:120",
+                            "row": "14",
+                            "seat": "7",
+                            "barcode": "UC00011",
+                            "ticketID": "TKT00011"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "sequence": "FB24:500101:12",
+            "lastUpdated": "2024-08-01T10:00:00-07:00",
+            "itemBasis": "SINGLE",
+            "itemQuantity": 1,
+            "itemUnitPrice": 100,
+            "priceType": {
+                "code": "R",
+                "name": "Regular",
+                "auditKind": "FULL",
+                "class": null
+            },
+            "itemExtendedPrice": 100,
+            "item": {
+                "code": "F012",
+                "name": "vs TCU"
+            },
+            "itemDate": "2024-11-30",
+            "events": [
+                {
+                    "event": {
+                        "code": "F012",
+                        "name": "Football Game 12"
+                    },
+                    "priceLevel": 1,
+                    "price": 100,
+                    "isTransferrable": true,
+                    "seats": [
+                        {
+                            "section": "E:310",
+                            "row": "10",
+                            "seat": "4",
+                            "barcode": "UC00012",
+                            "ticketID": "TKT00012"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
