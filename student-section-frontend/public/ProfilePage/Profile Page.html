@@ -3,18 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Profile & Tickets - StudentSection</title>
+    <title>StudentSection - My Profile</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             background: url('Cincy.jpg') no-repeat center center fixed;
             background-size: cover;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
             height: 100vh;
             margin: 0;
             padding: 10px;
+        }
+        .banner {
+            width: 100%;
+            background: #d1181e;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .banner a {
+            color: white;
+            text-decoration: none;
+            margin: 0 15px;
+            font-size: 18px;
+        }
+        .banner .profile-icon {
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .banner .logo-placeholder {
+            width: 80px;
+            height: 60px;
         }
         .profile-container {
             background: rgba(255, 255, 255, 0.9);
@@ -24,6 +52,7 @@
             width: 90%;
             max-width: 500px;
             text-align: center;
+            margin-top: 100px;
         }
         h2 {
             margin-bottom: 20px;
@@ -72,6 +101,14 @@
     </style>
 </head>
 <body>
+    <div class="banner">
+        <img src="StudentSectionTransparent.png" alt="Student Section Logo" class="logo-placeholder">
+        <div>
+            <a href="#">Home</a>
+        </div>
+        <a href="Profile Page.html" class="profile-icon">👤</a>
+    </div>
+    
     <div class="profile-container">
         <h2>My Profile</h2>
         <p><strong>Name:</strong> John Doe</p>
