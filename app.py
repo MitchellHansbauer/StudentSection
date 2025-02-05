@@ -3,12 +3,19 @@ from models import db, User, Ticket, Listing, Transaction, APILog
 from datetime import datetime
 import requests
 from flask_cors import CORS
+from pymongo import MongoClient
+from schedule_parser import parse_html_schedule
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///student_section.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 CORS(app)  # Enable CORS
+
+# MongoDB connection
+client = MongoClient('mongodb+srv://dbadmin:Time2add@studentsectiondemo.9mdru.mongodb.net/?retryWrites=true&w=majority&appName=StudentSectionDemo')
+db = client['student_section']
+schedules_collection = db['schedules']
 
 MOCK_API_BASE_URL = "http://localhost:3003"
 
@@ -319,6 +326,29 @@ def delete_listing():
     db.session.commit()
 
     return jsonify({'message': 'Listing deleted successfully'}), 200
+
+@app.route('/api/upload_schedule', methods=['POST'])
+def upload_schedule():
+    if 'file' not in request.files:
+        return jsonify({"error": "No file part in the request"}), 400
+
+    file = request.files['file']
+
+    if file.filename == '':
+        return jsonify({"error": "No file selected for uploading"}), 400
+
+    if file and file.filename.endswith('.html'):
+        html_content = file.read().decode('utf-8')
+        # Process the HTML content
+        schedule_data = parse_html_schedule(html_content)
+        if schedule_data:
+            schedules_collection.insert_one(schedule_data)
+            return jsonify({"message": "Schedule uploaded successfully"}), 201
+        else:
+            return jsonify({"error": "Failed to parse schedule"}), 400
+    else:
+        return jsonify({"error": "Invalid file type. Only .html files are allowed"}), 400
+
 
 if __name__ == '__main__':
     with app.app_context():
