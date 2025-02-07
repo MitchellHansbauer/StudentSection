@@ -7,6 +7,7 @@ function Navbar() {
       <ul>
         <li><Link to="/">My Tickets</Link></li>
         <li><Link to="/marketplace">Marketplace</Link></li>
+        <li><link to="/schedule">Schedule</link></li>
         {/* Future links for login, signup, etc. */}
       </ul>
     </nav>

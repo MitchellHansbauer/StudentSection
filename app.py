@@ -14,8 +14,8 @@ CORS(app)  # Enable CORS
 
 # MongoDB connection
 client = MongoClient('mongodb+srv://dbadmin:Time2add@studentsectiondemo.9mdru.mongodb.net/?retryWrites=true&w=majority&appName=StudentSectionDemo')
-db = client['student_section']
-schedules_collection = db['schedules']
+ssdb = client['student_section']
+schedules_collection = ssdb['schedules']
 
 MOCK_API_BASE_URL = "http://localhost:3003"
 

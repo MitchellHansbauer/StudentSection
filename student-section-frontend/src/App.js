@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import TicketsList from './components/TicketsList';
 import Marketplace from './components/Marketplace';
 import Navbar from './components/Navbar';
+import UploadSchedule from './components/UploadSchedule';
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
         <Routes>
           <Route path="/" element={<TicketsList />} />
           <Route path="/marketplace" element={<Marketplace />} />
+          <Route path="/schedule" element={<UploadSchedule />} />
           {/* Other routes */}
         </Routes>
       </div>
