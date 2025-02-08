@@ -327,19 +327,19 @@ def delete_listing():
 
     return jsonify({'message': 'Listing deleted successfully'}), 200
 
-@app.route('/api/upload_schedule', methods=['POST'])
+@app.route('/schedule/upload_schedule', methods=['POST'])
 def upload_schedule():
+    """Handles schedule upload from an HTML file."""
     if 'file' not in request.files:
-        return jsonify({"error": "No file part in the request"}), 400
+        return jsonify({"error": "No file provided"}), 400
 
     file = request.files['file']
 
     if file.filename == '':
-        return jsonify({"error": "No file selected for uploading"}), 400
+        return jsonify({"error": "No file selected"}), 400
 
     if file and file.filename.endswith('.html'):
         html_content = file.read().decode('utf-8')
-        # Process the HTML content
         schedule_data = parse_html_schedule(html_content)
         if schedule_data:
             schedules_collection.insert_one(schedule_data)
@@ -348,6 +348,38 @@ def upload_schedule():
             return jsonify({"error": "Failed to parse schedule"}), 400
     else:
         return jsonify({"error": "Invalid file type. Only .html files are allowed"}), 400
+
+@app.route('/proxy/schedule', methods=['POST'])
+def proxy_schedule():
+    """
+    Fetches the schedule from an external URL, parses it, and stores it in MongoDB.
+    """
+    data = request.json
+    schedule_url = data.get('url')
+
+    if not schedule_url:
+        return jsonify({"error": "No URL provided"}), 400
+
+    try:
+        response = requests.get(schedule_url)
+        response.raise_for_status()  # Ensure request was successful
+        
+        html_content = response.text
+
+        schedule_data = parse_html_schedule(html_content)
+
+        if schedule_data:
+            schedules_collection.insert_one(schedule_data)
+            return jsonify({"message": "Schedule fetched and stored successfully"}), 201
+        else:
+            return jsonify({"error": "Failed to parse schedule data. The webpage format may have changed."}), 400
+
+    except requests.exceptions.HTTPError as http_err:
+        return jsonify({"error": f"HTTP error occurred: {http_err}"}), 500
+    except requests.exceptions.RequestException as req_err:
+        return jsonify({"error": f"Network error occurred: {req_err}"}), 500
+
+
 
 
 if __name__ == '__main__':
