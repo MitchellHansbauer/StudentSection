@@ -360,24 +360,40 @@ def proxy_schedule():
     if not schedule_url:
         return jsonify({"error": "No URL provided"}), 400
 
+    print(f"Fetching schedule from URL: {schedule_url}")  # Debug Log
+
     try:
         response = requests.get(schedule_url)
         response.raise_for_status()  # Ensure request was successful
-        
-        html_content = response.text
 
+        print("Successfully fetched schedule page.")  # Debug Log
+
+        html_content = response.text
+        if not html_content.strip():
+            print("Error: The fetched schedule is empty.")  # Debug Log
+            return jsonify({"error": "Received empty content from the schedule URL"}), 400
+
+        # Try parsing the schedule
+        print("Parsing schedule...")  # Debug Log
         schedule_data = parse_html_schedule(html_content)
 
         if schedule_data:
+            print("Successfully parsed schedule, inserting into MongoDB...")  # Debug Log
             schedules_collection.insert_one(schedule_data)
             return jsonify({"message": "Schedule fetched and stored successfully"}), 201
         else:
+            print("Error: Failed to parse schedule data.")  # Debug Log
             return jsonify({"error": "Failed to parse schedule data. The webpage format may have changed."}), 400
 
     except requests.exceptions.HTTPError as http_err:
+        print(f"HTTP error occurred: {http_err}")  # Debug Log
         return jsonify({"error": f"HTTP error occurred: {http_err}"}), 500
     except requests.exceptions.RequestException as req_err:
+        print(f"Network error occurred: {req_err}")  # Debug Log
         return jsonify({"error": f"Network error occurred: {req_err}"}), 500
+    except Exception as e:
+        print(f"Unexpected error: {e}")  # Debug Log
+        return jsonify({"error": f"Unexpected error: {str(e)}"}), 500
 
 
 
