@@ -1,32 +1,63 @@
 from bs4 import BeautifulSoup
+import re
 
 def parse_html_schedule(html_content):
-    soup = BeautifulSoup(html_content, 'html.parser')
+    """
+    Parses raw HTML or plain text schedule data and extracts games.
+    """
+    soup = BeautifulSoup(html_content, 'html5lib')
+
+    # Try finding the <pre> tag first
+    pre_tag = soup.find('pre')
+    if pre_tag:
+        schedule_text = pre_tag.get_text("\n", strip=True)
+    else:
+        print("Warning: No <pre> tag found, using full body text instead.")
+        schedule_text = soup.get_text("\n", strip=True)  # Fallback to extracting text from the whole body
+
+    # Log extracted text for debugging
+    print("Extracted Schedule Text:", schedule_text[:1000])
+
+    # Split lines
+    lines = schedule_text.split("\n")
+
+    # Initialize schedule data
     schedule_data = {
-        "school_name": "",
-        "year": "",
+        "school_name": lines[0].strip(),
+        "year": re.search(r'\d{4}', lines[1]).group() if re.search(r'\d{4}', lines[1]) else "",
         "games": []
     }
 
-    # Example parsing logic (to be customized based on actual HTML structure)
-    # Extract school name and year
-    header = soup.find('h1')
-    if header:
-        schedule_data["school_name"] = header.text.strip()
+    # Find the starting index of the schedule games
+    try:
+        start_index = lines.index("Date           Time            At     Opponent        Location                                       Tournament   Result ") + 1
+    except ValueError:
+        print("Error: Could not find game schedule header in the text.")
+        return None  # Return None if we can't find where the games start
 
-    # Extract game details
-    games_table = soup.find('table', {'id': 'schedule'})
-    if games_table:
-        for row in games_table.find_all('tr')[1:]:  # Skip header row
-            cols = row.find_all('td')
-            if len(cols) >= 5:
-                game = {
-                    "date": cols[0].text.strip(),
-                    "time": cols[1].text.strip(),
-                    "location": cols[2].text.strip(),
-                    "opponent": cols[3].text.strip(),
-                    "result": cols[4].text.strip()
-                }
-                schedule_data["games"].append(game)
+    # Process game lines
+    for line in lines[start_index:]:
+        if line.strip() == "":
+            continue
+
+        # Split by multiple spaces (since the table uses irregular spacing)
+        parts = re.split(r'\s{2,}', line.strip())
+
+        if len(parts) < 6:
+            print(f"Skipping malformed line: {line}")
+            continue
+
+        date, time, at, opponent, location, result = parts[:6]  # Extract first 6 columns
+
+        game = {
+            "date": date,
+            "time": time,
+            "home_or_away": "Home" if at.lower() == "home" else "Away",
+            "opponent": opponent,
+            "location": location,
+            "result": result
+        }
+
+        schedule_data["games"].append(game)
 
     return schedule_data if schedule_data["games"] else None

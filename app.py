@@ -352,8 +352,8 @@ def upload_schedule():
 @app.route('/proxy/schedule', methods=['POST'])
 def proxy_schedule():
     """
-    Fetches the schedule from an external URL, bypassing User-Agent restrictions, 
-    parses it, and stores it in MongoDB.
+    Fetches the schedule from an external URL, logs the raw response, parses it, 
+    and stores it in MongoDB.
     """
     data = request.json
     schedule_url = data.get('url')
@@ -374,7 +374,9 @@ def proxy_schedule():
         response = requests.get(schedule_url, headers=headers)
         response.raise_for_status()  # Ensure request was successful
 
+        # Log and print the first 1000 characters of the response to inspect it
         html_content = response.text
+        print("RAW RESPONSE CONTENT:", html_content[:1000])
 
         if not html_content.strip():
             return jsonify({"error": "Received empty content from the schedule URL"}), 400
