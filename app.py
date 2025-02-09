@@ -4,7 +4,10 @@ from datetime import datetime
 import requests
 from flask_cors import CORS
 from pymongo import MongoClient
+from pymongo import UpdateOne
+from datetime import datetime
 from schedule_parser import parse_html_schedule
+
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///student_section.db'
@@ -329,7 +332,7 @@ def delete_listing():
 
 @app.route('/schedule/upload_schedule', methods=['POST'])
 def upload_schedule():
-    """Handles schedule upload from an HTML file."""
+    """Handles schedule upload from an HTML file. Creates or updates an existing schedule."""
     if 'file' not in request.files:
         return jsonify({"error": "No file provided"}), 400
 
@@ -341,19 +344,40 @@ def upload_schedule():
     if file and file.filename.endswith('.html'):
         html_content = file.read().decode('utf-8')
         schedule_data = parse_html_schedule(html_content)
+
         if schedule_data:
-            schedules_collection.insert_one(schedule_data)
-            return jsonify({"message": "Schedule uploaded successfully"}), 201
-        else:
-            return jsonify({"error": "Failed to parse schedule"}), 400
+            school_name = schedule_data.get("school_name")
+            year = schedule_data.get("year")
+
+            # Add timestamp for last update
+            schedule_data["last_updated"] = datetime.utcnow()
+
+            # Check if the schedule already exists
+            existing_schedule = schedules_collection.find_one(
+                {"school_name": school_name, "year": year}
+            )
+
+            if existing_schedule:
+                # Update existing schedule
+                schedules_collection.update_one(
+                    {"school_name": school_name, "year": year},
+                    {"$set": schedule_data}
+                )
+                return jsonify({"message": "Schedule updated successfully"}), 200
+            else:
+                # Insert new schedule
+                schedules_collection.insert_one(schedule_data)
+                return jsonify({"message": "Schedule uploaded successfully"}), 201
+
+        return jsonify({"error": "Failed to parse schedule"}), 400
     else:
         return jsonify({"error": "Invalid file type. Only .html files are allowed"}), 400
-
+    
 @app.route('/proxy/schedule', methods=['POST'])
 def proxy_schedule():
     """
-    Fetches the schedule from an external URL, logs the raw response, parses it, 
-    and stores it in MongoDB.
+    Fetches the schedule from an external URL, logs the raw response, 
+    parses it, and either updates an existing schedule or stores a new one.
     """
     data = request.json
     schedule_url = data.get('url')
@@ -372,23 +396,43 @@ def proxy_schedule():
     try:
         # Fetch the schedule page with a valid User-Agent
         response = requests.get(schedule_url, headers=headers)
-        response.raise_for_status()  # Ensure request was successful
+        response.raise_for_status()
 
-        # Log and print the first 1000 characters of the response to inspect it
+        # Extract HTML content
         html_content = response.text
         print("RAW RESPONSE CONTENT:", html_content[:1000])
 
         if not html_content.strip():
             return jsonify({"error": "Received empty content from the schedule URL"}), 400
 
-        # Parse the schedule using BeautifulSoup
+        # Parse the schedule
         schedule_data = parse_html_schedule(html_content)
 
         if schedule_data:
-            schedules_collection.insert_one(schedule_data)
-            return jsonify({"message": "Schedule fetched and stored successfully"}), 201
-        else:
-            return jsonify({"error": "Failed to parse schedule data. The webpage format may have changed."}), 400
+            school_name = schedule_data.get("school_name")
+            year = schedule_data.get("year")
+
+            # Add timestamp for last update
+            schedule_data["last_updated"] = datetime.utcnow()
+
+            # Check if the schedule already exists
+            existing_schedule = schedules_collection.find_one(
+                {"school_name": school_name, "year": year}
+            )
+
+            if existing_schedule:
+                # Update existing schedule
+                schedules_collection.update_one(
+                    {"school_name": school_name, "year": year},
+                    {"$set": schedule_data}
+                )
+                return jsonify({"message": "Schedule updated successfully"}), 200
+            else:
+                # Insert new schedule
+                schedules_collection.insert_one(schedule_data)
+                return jsonify({"message": "Schedule fetched and stored successfully"}), 201
+
+        return jsonify({"error": "Failed to parse schedule data. The webpage format may have changed."}), 400
 
     except requests.exceptions.HTTPError as http_err:
         return jsonify({"error": f"HTTP error occurred: {http_err}"}), 500
@@ -396,6 +440,47 @@ def proxy_schedule():
         return jsonify({"error": f"Network error occurred: {req_err}"}), 500
     except Exception as e:
         return jsonify({"error": f"Unexpected error: {str(e)}"}), 500
+
+@app.route('/schedule/all', methods=['GET'])
+def retrieve_all_schedules():
+    """Retrieves all schedules stored in MongoDB."""
+    try:
+        # Fetch all schedules, excluding MongoDB's _id field for clean output
+        schedules = list(schedules_collection.find({}, {"_id": 0}))
+
+        if not schedules:
+            return jsonify({"message": "No schedules found"}), 404
+
+        return jsonify({"schedules": schedules}), 200
+
+    except Exception as e:
+        return jsonify({"error": f"Failed to retrieve schedule data: {str(e)}"}), 500
+
+
+@app.route('/schedule/retrieve', methods=['GET'])
+def retrieve_schedule():
+    """Retrieves schedules based on filters: school name and event type."""
+    try:
+        school_name = request.args.get('school_name', None)
+        event_type = request.args.get('event_type', None)
+
+        # Build the query dynamically based on provided filters
+        query = {}
+        if school_name:
+            query["school_name"] = {"$regex": school_name, "$options": "i"}  # Case-insensitive search
+        if event_type:
+            query["games.opponent"] = {"$regex": event_type, "$options": "i"}  # Match event type in game opponent name
+
+        # Fetch schedules matching the filters
+        schedules = list(schedules_collection.find(query, {"_id": 0}))
+
+        if not schedules:
+            return jsonify({"message": "No matching schedules found"}), 404
+
+        return jsonify({"schedules": schedules}), 200
+
+    except Exception as e:
+        return jsonify({"error": f"Failed to retrieve schedule data: {str(e)}"}), 500
 
 if __name__ == '__main__':
     with app.app_context():
