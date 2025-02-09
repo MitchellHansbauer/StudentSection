@@ -330,116 +330,72 @@ def delete_listing():
 
     return jsonify({'message': 'Listing deleted successfully'}), 200
 
-@app.route('/schedule/upload_schedule', methods=['POST'])
+@app.route('/schedule/upload', methods=['POST'])
 def upload_schedule():
-    """Handles schedule upload from an HTML file. Creates or updates an existing schedule."""
-    if 'file' not in request.files:
-        return jsonify({"error": "No file provided"}), 400
+    """
+    Handles schedule upload from an HTML file or a URL.
+    If a file is provided, it processes the file.
+    If a URL is provided, it fetches and processes the schedule from the URL.
+    """
+    if 'file' in request.files:
+        # Process file upload
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({"error": "No file selected"}), 400
 
-    file = request.files['file']
-
-    if file.filename == '':
-        return jsonify({"error": "No file selected"}), 400
-
-    if file and file.filename.endswith('.html'):
-        html_content = file.read().decode('utf-8')
-        schedule_data = parse_html_schedule(html_content)
-
-        if schedule_data:
-            school_name = schedule_data.get("school_name")
-            year = schedule_data.get("year")
-
-            # Add timestamp for last update
-            schedule_data["last_updated"] = datetime.utcnow()
-
-            # Check if the schedule already exists
-            existing_schedule = schedules_collection.find_one(
-                {"school_name": school_name, "year": year}
-            )
-
-            if existing_schedule:
-                # Update existing schedule
-                schedules_collection.update_one(
-                    {"school_name": school_name, "year": year},
-                    {"$set": schedule_data}
-                )
-                return jsonify({"message": "Schedule updated successfully"}), 200
-            else:
-                # Insert new schedule
-                schedules_collection.insert_one(schedule_data)
-                return jsonify({"message": "Schedule uploaded successfully"}), 201
-
-        return jsonify({"error": "Failed to parse schedule"}), 400
+        if file and file.filename.endswith('.html'):
+            html_content = file.read().decode('utf-8')
+            schedule_data = parse_html_schedule(html_content)
+        else:
+            return jsonify({"error": "Invalid file type. Only .html files are allowed"}), 400
     else:
-        return jsonify({"error": "Invalid file type. Only .html files are allowed"}), 400
-    
-@app.route('/proxy/schedule', methods=['POST'])
-def proxy_schedule():
-    """
-    Fetches the schedule from an external URL, logs the raw response, 
-    parses it, and either updates an existing schedule or stores a new one.
-    """
-    data = request.json
-    schedule_url = data.get('url')
+        # Process URL upload
+        data = request.json
+        schedule_url = data.get('url')
 
-    if not schedule_url:
-        return jsonify({"error": "No URL provided"}), 400
+        if not schedule_url:
+            return jsonify({"error": "No file or URL provided"}), 400
 
-    headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/91.0.4472.124 Safari/537.36"
-        )
-    }
-
-    try:
-        # Fetch the schedule page with a valid User-Agent
+        headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/91.0.4472.124 Safari/537.36"
+            )
+        }
         response = requests.get(schedule_url, headers=headers)
-        response.raise_for_status()
 
-        # Extract HTML content
+        if response.status_code != 200:
+            return jsonify({"error": "Failed to fetch schedule from URL"}), 400
+
         html_content = response.text
-        print("RAW RESPONSE CONTENT:", html_content[:1000])
-
-        if not html_content.strip():
-            return jsonify({"error": "Received empty content from the schedule URL"}), 400
-
-        # Parse the schedule
         schedule_data = parse_html_schedule(html_content)
 
-        if schedule_data:
-            school_name = schedule_data.get("school_name")
-            year = schedule_data.get("year")
+    if schedule_data:
+        school_name = schedule_data.get("school_name")
+        year = schedule_data.get("year")
 
-            # Add timestamp for last update
-            schedule_data["last_updated"] = datetime.utcnow()
+        # Add timestamp for last update
+        schedule_data["last_updated"] = datetime.utcnow()
 
-            # Check if the schedule already exists
-            existing_schedule = schedules_collection.find_one(
-                {"school_name": school_name, "year": year}
+        # Check if the schedule already exists
+        existing_schedule = schedules_collection.find_one(
+            {"school_name": school_name, "year": year}
+        )
+
+        if existing_schedule:
+            # Update existing schedule
+            schedules_collection.update_one(
+                {"school_name": school_name, "year": year},
+                {"$set": schedule_data}
             )
+            return jsonify({"message": "Schedule updated successfully"}), 200
+        else:
+            # Insert new schedule
+            schedules_collection.insert_one(schedule_data)
+            return jsonify({"message": "Schedule uploaded successfully"}), 201
 
-            if existing_schedule:
-                # Update existing schedule
-                schedules_collection.update_one(
-                    {"school_name": school_name, "year": year},
-                    {"$set": schedule_data}
-                )
-                return jsonify({"message": "Schedule updated successfully"}), 200
-            else:
-                # Insert new schedule
-                schedules_collection.insert_one(schedule_data)
-                return jsonify({"message": "Schedule fetched and stored successfully"}), 201
-
-        return jsonify({"error": "Failed to parse schedule data. The webpage format may have changed."}), 400
-
-    except requests.exceptions.HTTPError as http_err:
-        return jsonify({"error": f"HTTP error occurred: {http_err}"}), 500
-    except requests.exceptions.RequestException as req_err:
-        return jsonify({"error": f"Network error occurred: {req_err}"}), 500
-    except Exception as e:
-        return jsonify({"error": f"Unexpected error: {str(e)}"}), 500
+    return jsonify({"error": "Failed to parse schedule"}), 400
 
 @app.route('/schedule/all', methods=['GET'])
 def retrieve_all_schedules():

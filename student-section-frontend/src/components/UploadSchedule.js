@@ -3,39 +3,67 @@ import axios from 'axios';
 
 function UploadSchedule() {
   const [scheduleUrl, setScheduleUrl] = useState('');
+  const [scheduleFile, setScheduleFile] = useState(null);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
-  const handleFetchSchedule = async () => {
-    if (!scheduleUrl) {
-      setError('Please enter a schedule URL.');
+  const handleFileChange = (event) => {
+    setScheduleFile(event.target.files[0]);
+  };
+
+  const handleUpload = async () => {
+    if (!scheduleFile && !scheduleUrl) {
+      setError('Please select a file or enter a URL.');
       return;
     }
 
-    try {
-      const response = await axios.post('http://localhost:5000/proxy/schedule', { url: scheduleUrl });
+    setError('');
+    setMessage('');
 
-      setMessage(response.data.message || 'Schedule fetched and stored successfully!');
-      setError('');
-    } catch (err) {
-      console.error('Fetch error:', err);
-      setError(err.response?.data?.error || 'Failed to fetch schedule.');
+    if (scheduleFile) {
+      // Upload file
+      const formData = new FormData();
+      formData.append('file', scheduleFile);
+
+      try {
+        const response = await axios.post('http://localhost:5000/schedule/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        setMessage(response.data.message);
+      } catch (err) {
+        setError(err.response?.data?.error || 'Failed to upload schedule.');
+      }
+    } else if (scheduleUrl) {
+      // Fetch from URL
+      try {
+        const response = await axios.post('http://localhost:5000/schedule/upload', { url: scheduleUrl });
+        setMessage(response.data.message);
+      } catch (err) {
+        setError(err.response?.data?.error || 'Failed to fetch schedule from URL.');
+      }
     }
   };
 
   return (
     <div>
-      <h2>Fetch Schedule from URL</h2>
-      <input
-        type="text"
-        placeholder="Enter schedule URL..."
-        value={scheduleUrl}
-        onChange={(e) => setScheduleUrl(e.target.value)}
-        style={{ width: '80%', padding: '10px', margin: '10px 0' }}
-      />
-      <button onClick={handleFetchSchedule} style={{ padding: '10px 20px' }}>
-        Fetch Schedule
-      </button>
+      <h2>Upload Schedule</h2>
+      
+      <div>
+        <h3>Upload HTML File</h3>
+        <input type="file" accept=".html" onChange={handleFileChange} />
+      </div>
+
+      <div>
+        <h3>Or Enter Schedule URL</h3>
+        <input
+          type="text"
+          placeholder="Enter schedule URL..."
+          value={scheduleUrl}
+          onChange={(e) => setScheduleUrl(e.target.value)}
+        />
+      </div>
+
+      <button onClick={handleUpload}>Upload</button>
 
       {message && <p style={{ color: 'green' }}>{message}</p>}
       {error && <p style={{ color: 'red' }}>{error}</p>}
