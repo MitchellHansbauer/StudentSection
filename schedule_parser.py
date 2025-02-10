@@ -5,6 +5,9 @@ def parse_html_schedule(html_content):
     """
     Parses raw HTML or plain text schedule data and extracts games.
     """
+    from bs4 import BeautifulSoup
+    import re
+
     soup = BeautifulSoup(html_content, 'html5lib')
 
     # Try finding the <pre> tag first
@@ -28,10 +31,14 @@ def parse_html_schedule(html_content):
         "games": []
     }
 
-    # Find the starting index of the schedule games
-    try:
-        start_index = lines.index("Date           Time            At     Opponent        Location                                       Tournament   Result ") + 1
-    except ValueError:
+    # Find the starting index of the schedule games using a regex search
+    start_index = None
+    for i, line in enumerate(lines):
+        if re.search(r'\bDate\b.*\bTime\b.*\bAt\b.*\bOpponent\b.*\bLocation\b', line):
+            start_index = i + 1
+            break
+
+    if start_index is None:
         print("Error: Could not find game schedule header in the text.")
         return None  # Return None if we can't find where the games start
 
@@ -43,11 +50,12 @@ def parse_html_schedule(html_content):
         # Split by multiple spaces (since the table uses irregular spacing)
         parts = re.split(r'\s{2,}', line.strip())
 
-        if len(parts) < 6:
+        if len(parts) < 5:  # Adjust the check to accommodate missing results for future games
             print(f"Skipping malformed line: {line}")
             continue
 
-        date, time, at, opponent, location, result = parts[:6]  # Extract first 6 columns
+        date, time, at, opponent, location = parts[:5]
+        result = parts[5] if len(parts) > 5 else "TBD"  # Handle missing result for future games
 
         game = {
             "date": date,
