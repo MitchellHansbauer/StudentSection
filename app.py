@@ -333,12 +333,13 @@ def delete_listing():
 @app.route('/schedule/upload', methods=['POST'])
 def upload_schedule():
     """
-    Handles schedule upload from an HTML file or a URL.
-    If a file is provided, it processes the file.
-    If a URL is provided, it fetches and processes the schedule from the URL.
+    Handles schedule upload from an HTML file, a URL, or a manually created schedule.
+    Ensures required fields are present, otherwise prompts the frontend for missing values.
     """
+    data = request.json
+    schedule_data = None
+
     if 'file' in request.files:
-        # Process file upload
         file = request.files['file']
         if file.filename == '':
             return jsonify({"error": "No file selected"}), 400
@@ -348,21 +349,10 @@ def upload_schedule():
             schedule_data = parse_html_schedule(html_content)
         else:
             return jsonify({"error": "Invalid file type. Only .html files are allowed"}), 400
-    else:
-        # Process URL upload
-        data = request.json
-        schedule_url = data.get('url')
 
-        if not schedule_url:
-            return jsonify({"error": "No file or URL provided"}), 400
-
-        headers = {
-            "User-Agent": (
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/91.0.4472.124 Safari/537.36"
-            )
-        }
+    elif 'url' in data:
+        schedule_url = data['url']
+        headers = {"User-Agent": "Mozilla/5.0"}
         response = requests.get(schedule_url, headers=headers)
 
         if response.status_code != 200:
@@ -371,37 +361,61 @@ def upload_schedule():
         html_content = response.text
         schedule_data = parse_html_schedule(html_content)
 
-    if schedule_data:
-        school_name = schedule_data.get("school_name")
-        year = schedule_data.get("year")
+    elif 'custom_schedule' in data:
+        schedule_data = data['custom_schedule']
 
-        # Add timestamp for last update
-        schedule_data["last_updated"] = datetime.utcnow()
+    if not schedule_data:
+        return jsonify({"error": "Failed to parse or retrieve schedule"}), 400
 
-        # Check if the schedule already exists
-        existing_schedule = schedules_collection.find_one(
-            {"school_name": school_name, "year": year}
+    school_name = schedule_data.get("school_name", "")
+    year = schedule_data.get("year", "")
+
+    # Check for missing important fields
+    missing_fields = []
+
+    if not school_name:
+        missing_fields.append("school_name")
+    if not year:
+        missing_fields.append("year")
+
+    for game in schedule_data["games"]:
+        if "event_type" not in game or not game["event_type"]:
+            missing_fields.append("event_type")
+            break  # Only need to prompt once if event_type is missing in any game
+
+    if missing_fields:
+        return jsonify({
+            "error": "Missing required fields",
+            "missing_fields": missing_fields,
+            "schedule_data": schedule_data  # Send back the incomplete schedule
+        }), 400
+
+    # Ensure event_type is added to each game if not missing
+    for game in schedule_data["games"]:
+        if "event_type" not in game or not game["event_type"]:
+            game["event_type"] = "Football"
+
+    schedule_data["last_updated"] = datetime.utcnow()
+
+    # Check if a schedule already exists
+    existing_schedule = schedules_collection.find_one(
+        {"school_name": school_name, "year": year}
+    )
+
+    if existing_schedule:
+        schedules_collection.update_one(
+            {"school_name": school_name, "year": year},
+            {"$set": schedule_data}
         )
-
-        if existing_schedule:
-            # Update existing schedule
-            schedules_collection.update_one(
-                {"school_name": school_name, "year": year},
-                {"$set": schedule_data}
-            )
-            return jsonify({"message": "Schedule updated successfully"}), 200
-        else:
-            # Insert new schedule
-            schedules_collection.insert_one(schedule_data)
-            return jsonify({"message": "Schedule uploaded successfully"}), 201
-
-    return jsonify({"error": "Failed to parse schedule"}), 400
+        return jsonify({"message": "Schedule updated successfully"}), 200
+    else:
+        schedules_collection.insert_one(schedule_data)
+        return jsonify({"message": "Schedule uploaded successfully"}), 201
 
 @app.route('/schedule/all', methods=['GET'])
 def retrieve_all_schedules():
     """Retrieves all schedules stored in MongoDB."""
     try:
-        # Fetch all schedules, excluding MongoDB's _id field for clean output
         schedules = list(schedules_collection.find({}, {"_id": 0}))
 
         if not schedules:
@@ -411,7 +425,6 @@ def retrieve_all_schedules():
 
     except Exception as e:
         return jsonify({"error": f"Failed to retrieve schedule data: {str(e)}"}), 500
-
 
 @app.route('/schedule/retrieve', methods=['GET'])
 def retrieve_schedule():
@@ -423,9 +436,9 @@ def retrieve_schedule():
         # Build the query dynamically based on provided filters
         query = {}
         if school_name:
-            query["school_name"] = {"$regex": school_name, "$options": "i"}  # Case-insensitive search
+            query["school_name"] = {"$regex": school_name, "$options": "i"}  # Case-insensitive match
         if event_type:
-            query["games.opponent"] = {"$regex": event_type, "$options": "i"}  # Match event type in game opponent name
+            query["games.event_type"] = {"$regex": event_type, "$options": "i"}  # Case-insensitive match on event_type
 
         # Fetch schedules matching the filters
         schedules = list(schedules_collection.find(query, {"_id": 0}))
