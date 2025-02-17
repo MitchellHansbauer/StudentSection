@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from models import db, User, Ticket, Listing, Transaction, APILog
 from datetime import datetime
+import re
 import requests
 from flask_cors import CORS
 from pymongo import MongoClient
@@ -334,7 +335,7 @@ def delete_listing():
 def upload_schedule():
     """
     Handles schedule upload from an HTML file, a URL, or a manually created schedule.
-    Ensures required fields are present, otherwise prompts the frontend for missing values.
+    Ensures required fields are present; otherwise, prompts the frontend for missing values.
     """
     data = request.json
     schedule_data = None
@@ -370,41 +371,69 @@ def upload_schedule():
     school_name = schedule_data.get("school_name", "")
     year = schedule_data.get("year", "")
 
-    # Check for missing important fields
+    # Extract event_type either from a top-level field or from the first game
+    event_type = schedule_data.get("event_type")
+    if not event_type:
+        if schedule_data.get("games") and len(schedule_data["games"]) > 0:
+            event_type = schedule_data["games"][0].get("event_type", "")
+    
+    # Check for missing required fields
     missing_fields = []
-
     if not school_name:
         missing_fields.append("school_name")
     if not year:
         missing_fields.append("year")
-
-    for game in schedule_data["games"]:
-        if "event_type" not in game or not game["event_type"]:
-            missing_fields.append("event_type")
-            break  # Only need to prompt once if event_type is missing in any game
-
+    if not event_type:
+        missing_fields.append("event_type")
+    
     if missing_fields:
         return jsonify({
             "error": "Missing required fields",
             "missing_fields": missing_fields,
-            "schedule_data": schedule_data  # Send back the incomplete schedule
+            "schedule_data": schedule_data
         }), 400
 
-    # Ensure event_type is added to each game if not missing
-    for game in schedule_data["games"]:
-        if "event_type" not in game or not game["event_type"]:
-            game["event_type"] = "Football"
+    # Store event_type at the schedule level and remove from game objects later
+    schedule_data["event_type"] = event_type
+    
+    # Initialize current_year using the provided schedule's starting year.
+    current_year = int(year)
+    previous_dt = None
+
+    for game in schedule_data.get("games", []):
+        raw_date = game.get("date", "")
+        if raw_date:
+            # Remove any day-of-week info, e.g. " (Fri)"
+            clean_date = re.sub(r'\s*\(.*\)', '', raw_date).strip()  # e.g., "Oct 18"
+            try:
+                # Parse the date using the current_year.
+                dt = datetime.strptime(f"{clean_date} {current_year}", "%b %d %Y")
+                # If a previous date exists and the current month is less than the previous month,
+                # assume the season has rolled over to the next year.
+                if previous_dt is not None and dt.month < previous_dt.month:
+                    current_year += 1
+                    dt = datetime.strptime(f"{clean_date} {current_year}", "%b %d %Y")
+            except Exception as e:
+                return jsonify({"error": f"Failed to parse game date '{raw_date}': {str(e)}"}), 400
+            
+            # Format the date as MM/DD/YYYY.
+            game["date"] = dt.strftime("%m/%d/%Y")
+            previous_dt = dt
+
+        # Remove event_type from the game since it's now stored at the schedule level.
+        if "event_type" in game:
+            game.pop("event_type")
 
     schedule_data["last_updated"] = datetime.utcnow()
 
-    # Check if a schedule already exists
+    # Check if a schedule already exists based on school_name and event_type.
     existing_schedule = schedules_collection.find_one(
-        {"school_name": school_name, "year": year}
+        {"school_name": school_name, "event_type": event_type}
     )
 
     if existing_schedule:
         schedules_collection.update_one(
-            {"school_name": school_name, "year": year},
+            {"school_name": school_name, "event_type": event_type},
             {"$set": schedule_data}
         )
         return jsonify({"message": "Schedule updated successfully"}), 200
