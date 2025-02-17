@@ -395,7 +395,7 @@ def upload_schedule():
 
     # Store event_type at the schedule level and remove from game objects later
     schedule_data["event_type"] = event_type
-    
+
     # Initialize current_year using the provided schedule's starting year.
     current_year = int(year)
     previous_dt = None
@@ -462,14 +462,13 @@ def retrieve_schedule():
         school_name = request.args.get('school_name', None)
         event_type = request.args.get('event_type', None)
 
-        # Build the query dynamically based on provided filters
+        # Build the query dynamically based on provided filters.
         query = {}
         if school_name:
-            query["school_name"] = {"$regex": school_name, "$options": "i"}  # Case-insensitive match
+            query["school_name"] = {"$regex": school_name, "$options": "i"}  # Case-insensitive
         if event_type:
-            query["games.event_type"] = {"$regex": event_type, "$options": "i"}  # Case-insensitive match on event_type
+            query["event_type"] = {"$regex": event_type, "$options": "i"}  # Now at the top level
 
-        # Fetch schedules matching the filters
         schedules = list(schedules_collection.find(query, {"_id": 0}))
 
         if not schedules:

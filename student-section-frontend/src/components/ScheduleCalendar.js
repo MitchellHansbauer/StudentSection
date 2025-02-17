@@ -61,21 +61,19 @@ function ScheduleCalendar() {
       });
   };
 
-  // Helper function to parse event date
+  // Updated helper function to parse dates in MM/DD/YYYY format.
   const parseDate = (dateString) => {
-    const months = {
-      Jan: "01", Feb: "02", Mar: "03", Apr: "04", May: "05", Jun: "06",
-      Jul: "07", Aug: "08", Sep: "09", Oct: "10", Nov: "11", Dec: "12"
-    };
-
-    const match = dateString.match(/([A-Za-z]+) (\d+)/);
-    if (!match) return new Date(); // Fallback to today if format is unrecognized
-
-    const month = months[match[1]];
-    const day = match[2];
-    const year = new Date().getFullYear(); // Assume current year
-
-    return new Date(`${year}-${month}-${day}`);
+    // If dateString is in MM/DD/YYYY format, split and construct the Date.
+    if (dateString.includes('/')) {
+      const parts = dateString.split('/');
+      if (parts.length === 3) {
+        const [month, day, year] = parts;
+        return new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
+      }
+    }
+    // Fallback: try to construct a Date directly.
+    const d = new Date(dateString);
+    return isNaN(d.getTime()) ? new Date() : d;
   };
 
   return (
@@ -124,7 +122,11 @@ function ScheduleCalendar() {
           plugins={[dayGridPlugin, timeGridPlugin]}
           initialView="dayGridMonth"
           events={events}
-          eventClick={(info) => alert(`Details:\n${info.event.title}\nLocation: ${info.event.extendedProps.location}\nTime: ${info.event.extendedProps.time}\nInfo: ${info.event.extendedProps.additionalInfo}`)}
+          eventClick={(info) =>
+            alert(
+              `Details:\n${info.event.title}\nLocation: ${info.event.extendedProps.location}\nTime: ${info.event.extendedProps.time}\nInfo: ${info.event.extendedProps.additionalInfo}`
+            )
+          }
           height="600px"
         />
       </div>
