@@ -1,0 +1,13 @@
+{
+    "_id": "5f3b9b3b1f6f6c001f6b4b3b",
+    "phone": "string",
+    "email": "ta236@paciolan.com",
+    "password": "string",
+    "FirstName": "Juan",
+    "LastName": "Ramirez",
+    "School": "string",
+    "PaciolanID": "string",
+    "stripeAccountId": "acct_1Example123456",
+    "createdAt": "2025-02-18T00:00:00Z",
+    "updatedAt": "2025-02-18T00:00:00Z"
+}

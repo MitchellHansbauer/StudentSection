@@ -1,5 +1,7 @@
 import React from 'react';
+import './App.css';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import LoginPage from './components/Login';
 import TicketsList from './components/TicketsList';
 import Marketplace from './components/Marketplace';
 import Navbar from './components/Navbar';
@@ -12,6 +14,8 @@ function App() {
       <div>
         <Navbar />
         <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<LoginPage />} />
           <Route path="/" element={<TicketsList />} />
           <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/uploadschedule" element={<UploadSchedule />} />

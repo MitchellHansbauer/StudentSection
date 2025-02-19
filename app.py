@@ -20,6 +20,7 @@ CORS(app)  # Enable CORS
 client = MongoClient('mongodb+srv://dbadmin:Time2add@studentsectiondemo.9mdru.mongodb.net/?retryWrites=true&w=majority&appName=StudentSectionDemo')
 ssdb = client['student_section']
 schedules_collection = ssdb['schedules']
+users_collection = ssdb['users']
 
 MOCK_API_BASE_URL = "http://localhost:3003"
 
@@ -49,6 +50,48 @@ def get_mock_token():
     if response.status_code == 200:
         return response.json().get("accessToken")
     return None
+
+@app.route('/users/register', methods=['POST'])
+def create_user():
+    data = request.get_json()
+    
+    # Validate that required fields are present
+    required_fields = ["phone", "email", "password", "FirstName", "LastName", "School"]
+    for field in required_fields:
+        if field not in data:
+            return jsonify({"error": f"Missing field: {field}"}), 400
+    
+    # Add createdAt field
+    data['createdAt'] = datetime.now(datetime.timezone.utc).isoformat() + "Z"
+
+    # Insert the new user into MongoDB
+    result = users_collection.insert_one(data)
+    
+    if users_collection.find_one({"email": data["email"]}):
+        return jsonify({"error": "User already exists"}), 409
+    return jsonify({
+        "message": "User created successfully",
+        "user_id": str(result.inserted_id)
+    }), 201
+
+@app.route('/users/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    email = data.get("email")
+    password = data.get("password")
+    
+    if not email or not password:
+        return jsonify({"error": "Email and password are required"}), 400
+
+    # Look up the user by email and password (iIMPLEMENT COMPARING HASHED PASSWORDS)
+    user = users_collection.find_one({"email": email, "password": password})
+    
+    if user:
+        user["_id"] = str(user["_id"])
+        user.pop("password", None)
+        return jsonify({"message": "Login successful", "user": user}), 200
+    else:
+        return jsonify({"error": "Invalid email or password"}), 401
 
 # # Endpoint to retrieve and store tickets for a user
 # @app.route('/tickets/list', methods=['POST'])
@@ -330,10 +373,6 @@ def get_mock_token():
 #     db.session.commit()
 
 #     return jsonify({'message': 'Listing deleted successfully'}), 200
-@app.route('/user/register', methods=['POST'])
-def register_user():
-    
-
 
 @app.route('/schedule/upload', methods=['POST'])
 def upload_schedule():
