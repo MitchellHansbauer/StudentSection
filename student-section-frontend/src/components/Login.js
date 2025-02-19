@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 
-const LoginPage = () => {
+const LoginPage = ({ setUser }) => {
   const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -21,29 +22,26 @@ const LoginPage = () => {
         setError('Please fill in all required fields.');
         return;
       }
-      // Registration request to POST /users
+      // Registration request to POST /users/register
       try {
-        const res = await fetch('/users', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email,
-            password,
-            FirstName: firstName,
-            LastName: lastName,
-            phone,
-            School: school
-          })
+        const res = await axios.post('/users/register', {
+          email,
+          password,
+          FirstName: firstName,
+          LastName: lastName,
+          phone,
+          School: school
         });
-        const data = await res.json();
-        if (!res.ok) {
-          setError(data.error || 'Registration failed.');
-        } else {
-          alert('Registration successful! You can now log in.');
-          setIsRegister(false);
-        }
+        
+        alert('Registration successful! You can now log in.');
+        setIsRegister(false);
       } catch (err) {
-        setError('An error occurred during registration.');
+        // If the server sends { error: "..."} in JSON
+        if (err.response && err.response.data && err.response.data.error) {
+          setError(err.response.data.error);
+        } else {
+          setError('Registration failed.');
+        }
       }
     } else {
       // Login mode – ensure email and password are provided
@@ -52,20 +50,24 @@ const LoginPage = () => {
         return;
       }
       try {
-        const res = await fetch('/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          setError(data.error || 'Login failed.');
-        } else {
-          alert('Login successful!');
-          // Optionally, redirect or set user data in context/state
-        }
+        const res = await axios.post('/users/login', { email, password });
+        // If successful, the server responds with { message: "Login successful", user: {...} }
+        const { user } = res.data;
+        
+        // Save user info to localStorage
+        localStorage.setItem('user', JSON.stringify(user));
+        // Lift user state up to App (so App.js knows we are logged in)
+        setUser(user);
+        
+        // Optionally, redirect to "/" if you prefer:
+        // window.location.href = "/";
+        
       } catch (err) {
-        setError('An error occurred during login.');
+        if (err.response && err.response.data && err.response.data.error) {
+          setError(err.response.data.error);
+        } else {
+          setError('Login failed.');
+        }
       }
     }
   };
@@ -87,7 +89,6 @@ const LoginPage = () => {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
-        {/* Display error for email (or overall) */}
         {error && <div className="error">{error}</div>}
         <input
           type="password"
@@ -143,7 +144,13 @@ const LoginPage = () => {
           setIsRegister(!isRegister);
           setError('');
         }}
-        style={{ marginTop: '10px', background: 'transparent', border: 'none', color: '#d1181e', cursor: 'pointer' }}
+        style={{
+          marginTop: '10px',
+          background: 'transparent',
+          border: 'none',
+          color: '#d1181e',
+          cursor: 'pointer'
+        }}
       >
         {isRegister ? 'Switch to Login' : 'Switch to Register'}
       </button>
