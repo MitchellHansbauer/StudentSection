@@ -28,10 +28,9 @@ function App() {
         <Routes>
           {user ? (
             <>
-              <Route path="/" element={<TicketsList />} />
               <Route path="/marketplace" element={<Marketplace />} />
               <Route path="/uploadschedule" element={<UploadSchedule />} />
-              <Route path="/calendar" element={<ScheduleCalendar />} />
+              <Route path="/" element={<ScheduleCalendar />} />
               <Route path="*" element={<Navigate to="/" />} />
             </>
           ) : (
