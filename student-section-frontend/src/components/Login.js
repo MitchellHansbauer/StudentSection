@@ -75,7 +75,7 @@ const LoginPage = ({ setUser }) => {
   return (
     <div className="login-container">
       <img
-        src="StudentSectionTransparent.png"
+        src="./media/StudentSectionTransparent.png"
         alt="Student Section Logo"
         className="logo"
       />

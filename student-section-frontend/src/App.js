@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import './App.css';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import 'bootstrap/dist/css/bootstrap.min.css';
 import LoginPage from './components/Login';
 import TicketsList from './components/TicketsList';
 import Marketplace from './components/Marketplace';
@@ -11,7 +11,7 @@ import ScheduleCalendar from "./components/ScheduleCalendar";
 function App() {
   const [user, setUser] = useState(null);
 
-  // On mount, try to load user info from localStorage
+  // Load user info from localStorage on mount
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
@@ -26,23 +26,18 @@ function App() {
         {user && <Navbar />}
 
         <Routes>
-          {/* Protected routes: only accessible if user is logged in */}
           {user ? (
             <>
               <Route path="/" element={<TicketsList />} />
               <Route path="/marketplace" element={<Marketplace />} />
               <Route path="/uploadschedule" element={<UploadSchedule />} />
               <Route path="/calendar" element={<ScheduleCalendar />} />
-              {/* Optionally redirect anything else to / if logged in */}
               <Route path="*" element={<Navigate to="/" />} />
             </>
           ) : (
             <>
-              {/* If no user, only allow login route */}
               <Route path="/login" element={<LoginPage setUser={setUser} />} />
-              {/* Or a /signup route if you want a separate page. If you use the same component, that is fine. */}
               <Route path="/signup" element={<LoginPage setUser={setUser} />} />
-              {/* Anything else should redirect to /login */}
               <Route path="*" element={<Navigate to="/login" />} />
             </>
           )}
