@@ -24,7 +24,7 @@ const LoginPage = ({ setUser }) => {
       }
       // Registration request to POST /users/register
       try {
-        const res = await axios.post('/users/register', {
+        const res = await axios.post('http://localhost:5000/users/register', {
           email,
           password,
           FirstName: firstName,
@@ -50,7 +50,7 @@ const LoginPage = ({ setUser }) => {
         return;
       }
       try {
-        const res = await axios.post('/users/login', { email, password });
+        const res = await axios.post('http://localhost:5000/users/login', { email, password });
         // If successful, the server responds with { message: "Login successful", user: {...} }
         const { user } = res.data;
         
