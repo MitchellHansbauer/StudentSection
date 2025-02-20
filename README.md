@@ -1,5 +1,3 @@
----
-
 # Setting Up Student Section
 
 ## Prerequisites
@@ -7,11 +5,7 @@ Before getting started, ensure you have the following installed on your machine:
 - **Python** (latest version recommended)
 - **Node.js & npm** (for the frontend)
 - **Virtual Environment** (for Python dependencies)
-
----
-
 ## 🛠Installation & Setup
-
 ### 1️⃣ Set Up the Backend
 1. **Create & Activate a Virtual Environment** (if not already set up):
    ```sh
@@ -19,7 +13,6 @@ Before getting started, ensure you have the following installed on your machine:
    source venv/bin/activate  # Mac/Linux
    venv\Scripts\activate  # Windows
    ```
-
 2. **Install Python Dependencies**:
    ```sh
    pip install -r requirements.txt
@@ -30,25 +23,19 @@ Before getting started, ensure you have the following installed on your machine:
    python app.py
    ```
 
----
-
 ### 2️⃣ Set Up the Frontend
 1. **Navigate to the Frontend Directory**:
    ```sh
    cd student-section-frontend
    ```
-
 2. **Install React Dependencies**:
    ```sh
    npm ci
    ```
-
 3. **Start the Frontend**:
    ```sh
    npm start
    ```
-
----
 
 ## Final Steps
 - Your **backend** should now be running on `http://127.0.0.1:5000`
