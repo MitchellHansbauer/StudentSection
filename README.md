@@ -1,16 +1,56 @@
-To get this running on your machine you must have Python installed and a Virtual Environment Created
+---
 
-I suggest splitting your terminal, download python dependencies:
-pip install -r requirements.txt
+# Setting Up Student Section
 
-Start the backend:
-python app.py
+## Prerequisites
+Before getting started, ensure you have the following installed on your machine:
+- **Python** (latest version recommended)
+- **Node.js & npm** (for the frontend)
+- **Virtual Environment** (for Python dependencies)
 
-in the other run:
-cd student-section-fronted
+---
 
-then download react dependencies
-npm ci
+## 🛠Installation & Setup
 
-Start the frontend:
-npm start
+### 1️⃣ Set Up the Backend
+1. **Create & Activate a Virtual Environment** (if not already set up):
+   ```sh
+   python -m venv venv  # Create a virtual environment
+   source venv/bin/activate  # Mac/Linux
+   venv\Scripts\activate  # Windows
+   ```
+
+2. **Install Python Dependencies**:
+   ```sh
+   pip install -r requirements.txt
+   ```
+
+3. **Start the Backend**:
+   ```sh
+   python app.py
+   ```
+
+---
+
+### 2️⃣ Set Up the Frontend
+1. **Navigate to the Frontend Directory**:
+   ```sh
+   cd student-section-frontend
+   ```
+
+2. **Install React Dependencies**:
+   ```sh
+   npm ci
+   ```
+
+3. **Start the Frontend**:
+   ```sh
+   npm start
+   ```
+
+---
+
+## Final Steps
+- Your **backend** should now be running on `http://127.0.0.1:5000`
+- Your **frontend** should be accessible at `http://localhost:3000`
+- Keep both processes running in **separate terminal windows** or **use a split terminal**
