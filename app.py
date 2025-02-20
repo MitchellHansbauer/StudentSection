@@ -62,7 +62,7 @@ def create_user():
             return jsonify({"error": f"Missing field: {field}"}), 400
     
     # Add createdAt field
-    data['createdAt'] = datetime.now(datetime.timezone.utc).isoformat() + "Z"
+    data['createdAt'] = datetime.now()
 
     # Insert the new user into MongoDB
     result = users_collection.insert_one(data)
