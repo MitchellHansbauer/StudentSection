@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Logo from '../media/StudentSectionTransparent.png';
-import Background from '../media/Cincy.jpg'; 
+import Background from '../media/Cincy.jpg';
 
 const LoginPage = ({ setUser }) => {
   const [isRegister, setIsRegister] = useState(false);
@@ -24,7 +24,8 @@ const LoginPage = ({ setUser }) => {
         return;
       }
       try {
-        const res = await axios.post('http://localhost:5000/users/register', {
+        // 1. Register the user
+        await axios.post('http://localhost:5000/users/register', {
           email,
           password,
           FirstName: firstName,
@@ -33,8 +34,17 @@ const LoginPage = ({ setUser }) => {
           School: school,
         });
 
-        alert('Registration successful! You can now log in.');
-        setIsRegister(false);
+        // 2. Immediately log them in using the same credentials
+        const loginResponse = await axios.post('http://localhost:5000/users/login', {
+          email,
+          password,
+        });
+
+        // 3. Store user in localStorage + setUser state
+        localStorage.setItem('user', JSON.stringify(loginResponse.data.user));
+        setUser(loginResponse.data.user);
+
+        alert('Registration successful! You are now logged in.');
       } catch (err) {
         setError(err.response?.data?.error || 'Registration failed.');
       }
@@ -96,16 +106,40 @@ const LoginPage = ({ setUser }) => {
           {isRegister && (
             <>
               <div className="mb-3">
-                <input type="text" className="form-control" placeholder="First Name" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="First Name"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                />
               </div>
               <div className="mb-3">
-                <input type="text" className="form-control" placeholder="Last Name" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Last Name"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                />
               </div>
               <div className="mb-3">
-                <input type="text" className="form-control" placeholder="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Phone"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
               </div>
               <div className="mb-3">
-                <input type="text" className="form-control" placeholder="School" value={school} onChange={(e) => setSchool(e.target.value)} />
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="School"
+                  value={school}
+                  onChange={(e) => setSchool(e.target.value)}
+                />
               </div>
             </>
           )}
