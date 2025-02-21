@@ -64,11 +64,12 @@ def create_user():
     # Add createdAt field
     data['createdAt'] = datetime.now()
 
+    if users_collection.find_one({"email": data["email"]}):
+        return jsonify({"error": "User already exists"}), 409
+    
     # Insert the new user into MongoDB
     result = users_collection.insert_one(data)
     
-    if users_collection.find_one({"email": data["email"]}):
-        return jsonify({"error": "User already exists"}), 409
     return jsonify({
         "message": "User created successfully",
         "user_id": str(result.inserted_id)
