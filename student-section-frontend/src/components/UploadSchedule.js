@@ -5,22 +5,26 @@ function ScheduleBuilder() {
   const [schoolName, setSchoolName] = useState('');
   const [year, setYear] = useState('');
   const [eventType, setEventType] = useState('');
+
+  // Option toggles for optional fields:
+  const [includeAt, setIncludeAt] = useState(true);
+  const [includeOpponent, setIncludeOpponent] = useState(true);
+  const [includeResult, setIncludeResult] = useState(true);
+
   const [events, setEvents] = useState([
     {
-      // date, time, location are REQUIRED
       date: '',
       time: '',
       location: '',
-      // at, opponent, result are optional
       at: '',
       opponent: '',
       result: '',
     },
   ]);
+
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
-  // Add a new, empty row
   const addEventRow = () => {
     setEvents((prev) => [
       ...prev,
@@ -35,21 +39,69 @@ function ScheduleBuilder() {
     ]);
   };
 
-  // Update a field in a specific event row
   const updateEventField = (index, field, value) => {
     const newEvents = [...events];
     newEvents[index][field] = value;
     setEvents(newEvents);
   };
 
-  // Build the HTML schedule <pre> string
-  const buildHtmlSchedule = () => {
-    // The parser's expected header line
-    const headerLine = 'Date  Time  At  Opponent  Location  Result';
+  // Dynamically build the header line based on toggles:
+  const buildHeaderLine = () => {
+    // Always required:
+    const columns = ['Date', 'Time', 'Location'];
 
-    // Convert each event into a row, with empty columns allowed for optional fields
+    // If user wants to include them, push them in the order you prefer:
+    // e.g. "At" before "Opponent," etc.
+    // The parser expects them in some order if you’re using the “full” header.
+    if (includeAt) columns.splice(2, 0, 'At'); // Insert "At" before "Location"
+    if (includeOpponent) columns.splice(includeAt ? 3 : 2, 0, 'Opponent');
+    if (includeResult) columns.push('Result');
+
+    return columns.join('  ');
+  };
+
+  // Build the final HTML schedule <pre> string
+  const buildHtmlSchedule = () => {
+    const headerLine = buildHeaderLine();
+
+    // For each event row, build columns dynamically too
     const eventLines = events.map((ev) => {
-      return `${ev.date}  ${ev.time}  ${ev.at}  ${ev.opponent}  ${ev.location}  ${ev.result}`;
+      // Start with date, time, location:
+      let rowParts = [ev.date, ev.time, ev.location];
+
+      // If we’re including "At," insert it before location
+      // So we need to build them in the right order
+      // The simplest approach: always build an array in the final correct order
+      // depending on toggles:
+      // Example:
+      let dynamicParts = [];
+      if (includeAt) dynamicParts.push(ev.at);
+      if (includeOpponent) dynamicParts.push(ev.opponent);
+      // location always goes at the end of these optional columns
+      dynamicParts.push(ev.location);
+
+      // We actually inserted location into dynamicParts, so remove it from rowParts
+      // to avoid duplication. Let’s restructure for clarity:
+
+      // We'll always start rowParts with [date, time]
+      rowParts = [ev.date, ev.time];
+
+      // Then add the dynamic columns that might include at, opponent, location:
+      let optionalForRow = [];
+      if (includeAt) optionalForRow.push(ev.at || '');
+      if (includeOpponent) optionalForRow.push(ev.opponent || '');
+      // location is definitely last in the optional chain
+      optionalForRow.push(ev.location || '');
+      
+      // Combine them:
+      rowParts = [...rowParts, ...optionalForRow];
+
+      if (includeResult) {
+        rowParts.push(ev.result || '');
+      }
+
+      // Finally, join them with double spaces
+      return rowParts.join('  ');
     });
 
     // The lines inside the <pre> tag:
@@ -58,15 +110,9 @@ function ScheduleBuilder() {
     // 3) eventType
     // 4) header line
     // 5+) each event line
-    const lines = [
-      schoolName,
-      year,
-      eventType,
-      headerLine,
-      ...eventLines,
-    ].join('\n');
+    const lines = [schoolName, year, eventType, headerLine, ...eventLines].join('\n');
 
-    // Wrap in a <pre> for schedule_parser.py
+    // Wrap in <pre> for parse_html_schedule or your endpoint
     return `<html><body><pre>${lines}</pre></body></html>`;
   };
 
@@ -74,9 +120,9 @@ function ScheduleBuilder() {
     setError('');
     setMessage('');
 
-    // Check top-level fields
-    if (!schoolName.trim() || !year.trim() || !eventType.trim()) {
-      setError('School Name, Year, and Event Type are required.');
+    // Still enforce basic requirements for year/eventType, etc.
+    if (!year.trim() || !eventType.trim()) {
+      setError('Year and Event Type are required.');
       return;
     }
 
@@ -89,11 +135,10 @@ function ScheduleBuilder() {
       }
     }
 
-    // Build and send
     const htmlString = buildHtmlSchedule();
     try {
       const response = await axios.post('http://localhost:5000/schedule/upload', {
-        html: htmlString,
+        custom_schedule: htmlString,
       });
       setMessage(response.data.message || 'Schedule uploaded successfully!');
     } catch (err) {
@@ -108,7 +153,7 @@ function ScheduleBuilder() {
       {message && <div style={{ color: 'green' }}>{message}</div>}
 
       <div style={{ marginBottom: '1rem' }}>
-        <label>School Name (required): </label>
+        <label>School Name (optional): </label>
         <input
           type="text"
           value={schoolName}
@@ -117,7 +162,7 @@ function ScheduleBuilder() {
       </div>
 
       <div style={{ marginBottom: '1rem' }}>
-        <label>Year (required, e.g. 2023): </label>
+        <label>Year (required, e.g. 2025): </label>
         <input
           type="text"
           value={year}
@@ -134,10 +179,42 @@ function ScheduleBuilder() {
         />
       </div>
 
+      {/* Toggles for optional columns */}
+      <div style={{ marginBottom: '1rem' }}>
+        <label>
+          <input
+            type="checkbox"
+            checked={includeAt}
+            onChange={() => setIncludeAt(!includeAt)}
+          />
+          Include "At" (Home/Away)?
+        </label>
+      </div>
+      <div style={{ marginBottom: '1rem' }}>
+        <label>
+          <input
+            type="checkbox"
+            checked={includeOpponent}
+            onChange={() => setIncludeOpponent(!includeOpponent)}
+          />
+          Include "Opponent"?
+        </label>
+      </div>
+      <div style={{ marginBottom: '1rem' }}>
+        <label>
+          <input
+            type="checkbox"
+            checked={includeResult}
+            onChange={() => setIncludeResult(!includeResult)}
+          />
+          Include "Result"?
+        </label>
+      </div>
+
       <h4>Events</h4>
       <p>
         For each event, <strong>Date</strong>, <strong>Time</strong>, and <strong>Location</strong> are required.
-        “At,” “Opponent,” and “Result” are optional.
+        “At,” “Opponent,” and “Result” are optional if the toggles are on.
       </p>
 
       {events.map((ev, index) => (
@@ -153,7 +230,7 @@ function ScheduleBuilder() {
             <label>Date (required): </label>
             <input
               type="text"
-              placeholder="MM/DD/YYYY"
+              placeholder="Month Day"
               value={ev.date}
               onChange={(e) => updateEventField(index, 'date', e.target.value)}
             />
@@ -167,22 +244,29 @@ function ScheduleBuilder() {
               onChange={(e) => updateEventField(index, 'time', e.target.value)}
             />
           </div>
-          <div style={{ marginBottom: '0.5rem' }}>
-            <label>At (optional, e.g. Home, Away): </label>
-            <input
-              type="text"
-              value={ev.at}
-              onChange={(e) => updateEventField(index, 'at', e.target.value)}
-            />
-          </div>
-          <div style={{ marginBottom: '0.5rem' }}>
-            <label>Opponent (optional): </label>
-            <input
-              type="text"
-              value={ev.opponent}
-              onChange={(e) => updateEventField(index, 'opponent', e.target.value)}
-            />
-          </div>
+
+          {includeAt && (
+            <div style={{ marginBottom: '0.5rem' }}>
+              <label>At (optional, e.g. Home, Away): </label>
+              <input
+                type="text"
+                value={ev.at}
+                onChange={(e) => updateEventField(index, 'at', e.target.value)}
+              />
+            </div>
+          )}
+
+          {includeOpponent && (
+            <div style={{ marginBottom: '0.5rem' }}>
+              <label>Opponent (optional): </label>
+              <input
+                type="text"
+                value={ev.opponent}
+                onChange={(e) => updateEventField(index, 'opponent', e.target.value)}
+              />
+            </div>
+          )}
+
           <div style={{ marginBottom: '0.5rem' }}>
             <label>Location (required): </label>
             <input
@@ -192,14 +276,17 @@ function ScheduleBuilder() {
               onChange={(e) => updateEventField(index, 'location', e.target.value)}
             />
           </div>
-          <div style={{ marginBottom: '0.5rem' }}>
-            <label>Result (optional): </label>
-            <input
-              type="text"
-              value={ev.result}
-              onChange={(e) => updateEventField(index, 'result', e.target.value)}
-            />
-          </div>
+
+          {includeResult && (
+            <div style={{ marginBottom: '0.5rem' }}>
+              <label>Result (optional): </label>
+              <input
+                type="text"
+                value={ev.result}
+                onChange={(e) => updateEventField(index, 'result', e.target.value)}
+              />
+            </div>
+          )}
         </div>
       ))}
 

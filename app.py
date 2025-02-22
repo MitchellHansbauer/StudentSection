@@ -1,11 +1,14 @@
 from flask import Flask, request, jsonify
+from flask_session import Session
 from models import db, User, Ticket, Listing, Transaction, APILog
 from datetime import datetime
 import re
+import os
 import requests
 from flask_cors import CORS
 from pymongo import MongoClient
 from pymongo import UpdateOne
+from bson import ObjectId
 from datetime import datetime
 from schedule_parser import parse_html_schedule
 
@@ -21,18 +24,27 @@ client = MongoClient('mongodb+srv://dbadmin:Time2add@studentsectiondemo.9mdru.mo
 ssdb = client['student_section']
 schedules_collection = ssdb['schedules']
 users_collection = ssdb['users']
+apilogs_collection = ssdb['apilogs']
 
 MOCK_API_BASE_URL = "http://localhost:3003"
 
-# Function to log API interactions
-def log_api_interaction(request_type, response_code, status):
-    api_log = APILog(
-        request_type=request_type,
-        response_code=response_code,
-        status=status
-    )
-    db.session.add(api_log)
-    db.session.commit()
+def log_mongo_debug(level: str, message: str, extra: dict = None):
+    """
+    Insert a debug log into the apilogs collection.
+    :param level: e.g. "DEBUG", "INFO", "ERROR"
+    :param message: A short log message or summary
+    :param extra: Optional dict of additional details
+    """
+    if extra is None:
+        extra = {}
+    
+    log_entry = {
+        "timestamp": datetime.utcnow(),
+        "level": level,
+        "message": message,
+        "extra": extra
+    }
+    apilogs_collection.insert_one(log_entry)
 
 # Utility function to authenticate with the mock Paciolan API
 def get_mock_token():
@@ -46,7 +58,7 @@ def get_mock_token():
     }
     response = requests.post(url, headers=headers)
     status = 'Success' if response.status_code == 200 else 'Error'
-    log_api_interaction('POST /v1/auth/token', response.status_code, status)
+    log_mongo_debug('POST /v1/auth/token', response.status_code, status)
     if response.status_code == 200:
         return response.json().get("accessToken")
     return None
@@ -421,111 +433,182 @@ def update_profile(user_id):
 def upload_schedule():
     """
     Handles schedule upload from an HTML file, a URL, or a manually created schedule.
-    Ensures required fields are present; otherwise, prompts the frontend for missing values.
+    Ensures that year and event_type are present; school_name is now optional.
     """
-    data = request.json
-    schedule_data = None
 
-    if 'file' in request.files:
-        file = request.files['file']
-        if file.filename == '':
-            return jsonify({"error": "No file selected"}), 400
-
-        if file and file.filename.endswith('.html'):
-            html_content = file.read().decode('utf-8')
-            schedule_data = parse_html_schedule(html_content)
-        else:
-            return jsonify({"error": "Invalid file type. Only .html files are allowed"}), 400
-
-    elif 'url' in data:
-        schedule_url = data['url']
-        headers = {"User-Agent": "Mozilla/5.0"}
-        response = requests.get(schedule_url, headers=headers)
-
-        if response.status_code != 200:
-            return jsonify({"error": "Failed to fetch schedule from URL"}), 400
-
-        html_content = response.text
-        schedule_data = parse_html_schedule(html_content)
-
-    elif 'custom_schedule' in data:
-        schedule_data = data['custom_schedule']
-
-    if not schedule_data:
-        return jsonify({"error": "Failed to parse or retrieve schedule"}), 400
-
-    school_name = schedule_data.get("school_name", "")
-    year = schedule_data.get("year", "")
-
-    # Extract event_type either from a top-level field or from the first game
-    event_type = schedule_data.get("event_type")
-    if not event_type:
-        if schedule_data.get("games") and len(schedule_data["games"]) > 0:
-            event_type = schedule_data["games"][0].get("event_type", "")
-    
-    # Check for missing required fields
-    missing_fields = []
-    if not school_name:
-        missing_fields.append("school_name")
-    if not year:
-        missing_fields.append("year")
-    if not event_type:
-        missing_fields.append("event_type")
-    
-    if missing_fields:
-        return jsonify({
-            "error": "Missing required fields",
-            "missing_fields": missing_fields,
-            "schedule_data": schedule_data
-        }), 400
-
-    # Store event_type at the schedule level and remove from game objects later
-    schedule_data["event_type"] = event_type
-
-    # Initialize current_year using the provided schedule's starting year.
-    current_year = int(year)
-    previous_dt = None
-
-    for game in schedule_data.get("games", []):
-        raw_date = game.get("date", "")
-        if raw_date:
-            # Remove any day-of-week info, e.g. " (Fri)"
-            clean_date = re.sub(r'\s*\(.*\)', '', raw_date).strip()  # e.g., "Oct 18"
-            try:
-                # Parse the date using the current_year.
-                dt = datetime.strptime(f"{clean_date} {current_year}", "%b %d %Y")
-                # If a previous date exists and the current month is less than the previous month,
-                # assume the season has rolled over to the next year.
-                if previous_dt is not None and dt.month < previous_dt.month:
-                    current_year += 1
-                    dt = datetime.strptime(f"{clean_date} {current_year}", "%b %d %Y")
-            except Exception as e:
-                return jsonify({"error": f"Failed to parse game date '{raw_date}': {str(e)}"}), 400
-            
-            # Format the date as MM/DD/YYYY.
-            game["date"] = dt.strftime("%m/%d/%Y")
-            previous_dt = dt
-
-        # Remove event_type from the game since it's now stored at the schedule level.
-        if "event_type" in game:
-            game.pop("event_type")
-
-    schedule_data["last_updated"] = datetime.utcnow()
-
-    # Check if a schedule already exists based on school_name and event_type.
-    existing_schedule = schedules_collection.find_one(
-        {"school_name": school_name, "event_type": event_type}
+    log_mongo_debug(
+        level="INFO",
+        message="upload_schedule endpoint invoked",
+        extra={"method": request.method, "has_file": 'file' in request.files}
     )
 
-    if existing_schedule:
-        schedules_collection.update_one(
-            {"school_name": school_name, "event_type": event_type},
-            {"$set": schedule_data}
+    data = request.get_json()
+    schedule_data = None
+
+    try:
+        # 1) Check for file upload
+        if 'file' in request.files:
+            file = request.files['file']
+            if file.filename == '':
+                log_mongo_debug(
+                    level="ERROR",
+                    message="No file selected",
+                    extra={"file.filename": file.filename}
+                )
+                return jsonify({"error": "No file selected"}), 400
+
+            if file and file.filename.endswith('.html'):
+                html_content = file.read().decode('utf-8')
+                schedule_data = parse_html_schedule(html_content)
+                log_mongo_debug(
+                    level="DEBUG",
+                    message="Parsed HTML schedule from uploaded file",
+                    extra={"filename": file.filename}
+                )
+            else:
+                log_mongo_debug(
+                    level="ERROR",
+                    message="Invalid file type. Only .html files are allowed",
+                    extra={"filename": file.filename}
+                )
+                return jsonify({"error": "Invalid file type. Only .html files are allowed"}), 400
+
+        # 2) Check for URL
+        elif 'url' in data:
+            schedule_url = data['url']
+            headers = {"User-Agent": "Mozilla/5.0"}
+            response = requests.get(schedule_url, headers=headers)
+            if response.status_code != 200:
+                log_mongo_debug(
+                    level="ERROR",
+                    message="Failed to fetch schedule from URL",
+                    extra={"url": schedule_url, "status_code": response.status_code}
+                )
+                return jsonify({"error": "Failed to fetch schedule from URL"}), 400
+
+            html_content = response.text
+            schedule_data = parse_html_schedule(html_content)
+            log_mongo_debug(
+                level="DEBUG",
+                message="Parsed HTML schedule from URL",
+                extra={"url": schedule_url}
+            )
+
+        # 3) Check for custom_schedule (manual HTML)
+        elif 'custom_schedule' in data:
+            raw_html = data['custom_schedule']
+            schedule_data = parse_html_schedule(raw_html)
+            log_mongo_debug(
+                level="DEBUG",
+                message="Parsed HTML schedule from custom_schedule",
+                extra={"length_of_html": len(raw_html)}
+            )
+
+        # If still no schedule_data, return error
+        if not schedule_data:
+            log_mongo_debug(
+                level="ERROR",
+                message="Failed to parse or retrieve schedule",
+                extra={"request_data": data}
+            )
+            return jsonify({"error": "Failed to parse or retrieve schedule"}), 400
+
+        # Extract top-level fields
+        school_name = schedule_data.get("school_name", "")  # Now optional
+        year = schedule_data.get("year", "")
+        event_type = schedule_data.get("event_type")
+
+        # If event_type wasn't found, maybe it's in the first game's data
+        if not event_type and schedule_data.get("games"):
+            event_type = schedule_data["games"][0].get("event_type", "")
+
+        # Check for missing required fields (remove school_name from this check)
+        missing_fields = []
+        if not year:
+            missing_fields.append("year")
+        if not event_type:
+            missing_fields.append("event_type")
+
+        if missing_fields:
+            log_mongo_debug(
+                level="INFO",
+                message="Missing required fields for schedule",
+                extra={"missing_fields": missing_fields}
+            )
+            return jsonify({
+                "error": "Missing required fields",
+                "missing_fields": missing_fields,
+                "schedule_data": schedule_data
+            }), 400
+
+        # Store event_type at the schedule level
+        schedule_data["event_type"] = event_type
+
+        # Date parsing logic (still uses year)
+        current_year = int(year)
+        previous_dt = None
+
+        for game in schedule_data.get("games", []):
+            raw_date = game.get("date", "")
+            if raw_date:
+                # Remove any day-of-week info, e.g. "(Fri)"
+                clean_date = re.sub(r'\s*\(.*\)', '', raw_date).strip()
+                try:
+                    dt = datetime.strptime(f"{clean_date} {current_year}", "%b %d %Y")
+                    # If this date’s month is less than a previous date’s month, assume rollover to next year
+                    if previous_dt and dt.month < previous_dt.month:
+                        current_year += 1
+                        dt = datetime.strptime(f"{clean_date} {current_year}", "%b %d %Y")
+                except Exception as e:
+                    log_mongo_debug(
+                        level="ERROR",
+                        message="Failed to parse game date",
+                        extra={"raw_date": raw_date, "error": str(e)}
+                    )
+                    return jsonify({"error": f"Failed to parse game date '{raw_date}': {str(e)}"}), 400
+
+                game["date"] = dt.strftime("%m/%d/%Y")
+                previous_dt = dt
+
+            # Remove event_type from individual games
+            if "event_type" in game:
+                game.pop("event_type")
+
+        schedule_data["last_updated"] = datetime.utcnow()
+
+        # Upsert logic: Check if an existing schedule with the same (school_name, event_type) pair exists
+        # (If school_name is blank, that’s okay; it just means they’re “public” or unknown school events.)
+        existing_schedule = schedules_collection.find_one(
+            {"school_name": school_name, "event_type": event_type}
         )
-        return jsonify({"message": "Schedule updated successfully"}), 200
-    else:
-        schedules_collection.insert_one(schedule_data)
-        return jsonify({"message": "Schedule uploaded successfully"}), 201
+
+        if existing_schedule:
+            schedules_collection.update_one(
+                {"school_name": school_name, "event_type": event_type},
+                {"$set": schedule_data}
+            )
+            log_mongo_debug(
+                level="INFO",
+                message="Schedule updated successfully in MongoDB",
+                extra={"school_name": school_name, "event_type": event_type}
+            )
+            return jsonify({"message": "Schedule updated successfully"}), 200
+        else:
+            schedules_collection.insert_one(schedule_data)
+            log_mongo_debug(
+                level="INFO",
+                message="Schedule uploaded successfully into MongoDB",
+                extra={"school_name": school_name, "event_type": event_type}
+            )
+            return jsonify({"message": "Schedule uploaded successfully"}), 201
+
+    except Exception as e:
+        log_mongo_debug(
+            level="ERROR",
+            message="Unhandled exception in upload_schedule",
+            extra={"error": str(e)}
+        )
+        return jsonify({"error": "An unexpected error occurred"}), 500
 
 @app.route('/schedule/all', methods=['GET'])
 def retrieve_all_schedules():

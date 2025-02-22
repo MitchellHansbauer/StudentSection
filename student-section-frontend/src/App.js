@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import 'bootstrap/dist/css/bootstrap.min.css';
 import LoginPage from './components/Login';
 import TicketsList from './components/TicketsList';
+import ProfilePage from './components/ProfilePage';
 import Marketplace from './components/Marketplace';
 import Navbar from './components/Navbar';
 import UploadSchedule from './components/UploadSchedule';
@@ -30,6 +31,7 @@ function App() {
             <>
               <Route path="/marketplace" element={<Marketplace />} />
               <Route path="/uploadschedule" element={<UploadSchedule />} />
+              <Route path="/profile" element={<ProfilePage />} />
               <Route path="/" element={<ScheduleCalendar />} />
               <Route path="*" element={<Navigate to="/" />} />
             </>
