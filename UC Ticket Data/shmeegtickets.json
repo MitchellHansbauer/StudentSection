@@ -1,0 +1,1262 @@
+{
+    "status": {
+        "cd": 0,
+        "mg": "successful",
+        "level": 0
+    },
+    "value": {
+        "patronId": "13219175",
+        "vieweVenueTransfer": "1",
+        "viewRenewal": "1",
+        "viewReturn": "0",
+        "viewExchange": "0",
+        "viewPackage": "1",
+        "messageCd": "WELCOME",
+        "lineItemOHVos": [
+            {
+                "orderDtStr": "2024-11-04T00:00:00.000-0500",
+                "seasonSeq": 15,
+                "eventTimeStamp": 1734184800000,
+                "season": "2024-25 Men's Basketball",
+                "eventOHVos": [
+                    {
+                        "eventDtStr": "2024-12-14T14:00:00.000-0500",
+                        "eventTimeStamp": 1734184800000,
+                        "timeTba": "0",
+                        "extPrice": 0,
+                        "seatOHVos": [
+                            {
+                                "printedDtStr": "2024-12-11T00:00:00.000-0500",
+                                "section": "123",
+                                "printedDt": 1733875200000,
+                                "dispositionName": "All-IN-1 Pass Delayed Delivery",
+                                "level": "ST"
+                            }
+                        ],
+                        "cost": 0,
+                        "facility": "FIFTH THIRD ARENA",
+                        "qty": 0,
+                        "id": "MB06:1",
+                        "name": "Xavier"
+                    },
+                    {
+                        "eventDtStr": "2025-01-04T14:30:00.000-0500",
+                        "eventTimeStamp": 1736001000000,
+                        "timeTba": "0",
+                        "extPrice": 0,
+                        "seatOHVos": [
+                            {
+                                "printedDtStr": "2024-12-11T00:00:00.000-0500",
+                                "section": "123",
+                                "printedDt": 1733875200000,
+                                "dispositionName": "All-IN-1 Pass Delayed Delivery",
+                                "level": "ST"
+                            }
+                        ],
+                        "cost": 0,
+                        "facility": "FIFTH THIRD ARENA",
+                        "qty": 0,
+                        "id": "MB08:1",
+                        "name": "Arizona"
+                    },
+                    {
+                        "eventDtStr": "2025-01-11T14:00:00.000-0500",
+                        "eventTimeStamp": 1736604000000,
+                        "timeTba": "0",
+                        "extPrice": 0,
+                        "seatOHVos": [
+                            {
+                                "printedDtStr": "2024-12-11T00:00:00.000-0500",
+                                "section": "123",
+                                "printedDt": 1733875200000,
+                                "dispositionName": "All-IN-1 Pass Delayed Delivery",
+                                "level": "ST"
+                            }
+                        ],
+                        "cost": 0,
+                        "facility": "FIFTH THIRD ARENA",
+                        "qty": 0,
+                        "id": "MB09:1",
+                        "name": "Kansas"
+                    },
+                    {
+                        "eventDtStr": "2025-01-18T14:00:00.000-0500",
+                        "eventTimeStamp": 1737208800000,
+                        "timeTba": "0",
+                        "extPrice": 0,
+                        "seatOHVos": [
+                            {
+                                "printedDtStr": "2024-12-11T00:00:00.000-0500",
+                                "section": "123",
+                                "printedDt": 1733875200000,
+                                "dispositionName": "All-IN-1 Pass Delayed Delivery",
+                                "level": "ST"
+                            }
+                        ],
+                        "cost": 0,
+                        "facility": "FIFTH THIRD ARENA",
+                        "qty": 0,
+                        "id": "MB10:1",
+                        "name": "Arizona State"
+                    },
+                    {
+                        "eventDtStr": "2025-01-21T19:00:00.000-0500",
+                        "eventTimeStamp": 1737486000000,
+                        "timeTba": "0",
+                        "extPrice": 0,
+                        "seatOHVos": [
+                            {
+                                "printedDtStr": "2024-12-11T00:00:00.000-0500",
+                                "section": "123",
+                                "printedDt": 1733875200000,
+                                "dispositionName": "All-IN-1 Pass Delayed Delivery",
+                                "level": "ST"
+                            }
+                        ],
+                        "cost": 0,
+                        "facility": "FIFTH THIRD ARENA",
+                        "qty": 0,
+                        "id": "MB11:1",
+                        "name": "Texas Tech"
+                    },
+                    {
+                        "eventDtStr": "2025-02-02T14:00:00.000-0500",
+                        "eventTimeStamp": 1738504800000,
+                        "timeTba": "0",
+                        "extPrice": 0,
+                        "seatOHVos": [
+                            {
+                                "printedDtStr": "2024-12-11T00:00:00.000-0500",
+                                "section": "123",
+                                "printedDt": 1733875200000,
+                                "dispositionName": "All-IN-1 Pass Delayed Delivery",
+                                "level": "ST"
+                            }
+                        ],
+                        "cost": 0,
+                        "facility": "FIFTH THIRD ARENA",
+                        "qty": 0,
+                        "id": "MB12:1",
+                        "name": "West Virginia"
+                    },
+                    {
+                        "eventDtStr": "2025-02-08T18:00:00.000-0500",
+                        "eventTimeStamp": 1739037600000,
+                        "timeTba": "0",
+                        "extPrice": 0,
+                        "seatOHVos": [
+                            {
+                                "printedDtStr": "2024-12-11T00:00:00.000-0500",
+                                "section": "123",
+                                "printedDt": 1733875200000,
+                                "dispositionName": "All-IN-1 Pass Delayed Delivery",
+                                "level": "ST"
+                            }
+                        ],
+                        "cost": 0,
+                        "facility": "FIFTH THIRD ARENA",
+                        "qty": 0,
+                        "id": "MB13:1",
+                        "name": "BYU"
+                    },
+                    {
+                        "eventDtStr": "2025-02-11T19:00:00.000-0500",
+                        "eventTimeStamp": 1739300400000,
+                        "timeTba": "0",
+                        "extPrice": 0,
+                        "seatOHVos": [
+                            {
+                                "printedDtStr": "2024-12-11T00:00:00.000-0500",
+                                "section": "123",
+                                "printedDt": 1733875200000,
+                                "dispositionName": "All-IN-1 Pass Delayed Delivery",
+                                "level": "ST"
+                            }
+                        ],
+                        "cost": 0,
+                        "facility": "FIFTH THIRD ARENA",
+                        "qty": 0,
+                        "id": "MB14:1",
+                        "name": "Utah"
+                    },
+                    {
+                        "eventDtStr": "2025-02-22T12:00:00.000-0500",
+                        "eventTimeStamp": 1740225600000,
+                        "timeTba": "0",
+                        "extPrice": 0,
+                        "seatOHVos": [
+                            {
+                                "printedDtStr": "2024-12-11T00:00:00.000-0500",
+                                "section": "123",
+                                "printedDt": 1733875200000,
+                                "dispositionName": "All-IN-1 Pass Delayed Delivery",
+                                "level": "ST"
+                            }
+                        ],
+                        "cost": 0,
+                        "facility": "FIFTH THIRD ARENA",
+                        "qty": 0,
+                        "id": "MB15:1",
+                        "name": "TCU"
+                    },
+                    {
+                        "eventDtStr": "2025-02-25T19:00:00.000-0500",
+                        "eventTimeStamp": 1740510000000,
+                        "timeTba": "0",
+                        "extPrice": 0,
+                        "seatOHVos": [
+                            {
+                                "printedDtStr": "2024-12-11T00:00:00.000-0500",
+                                "section": "123",
+                                "printedDt": 1733875200000,
+                                "dispositionName": "All-IN-1 Pass Delayed Delivery",
+                                "level": "ST"
+                            }
+                        ],
+                        "cost": 0,
+                        "facility": "FIFTH THIRD ARENA",
+                        "qty": 0,
+                        "id": "MB16:1",
+                        "name": "Baylor"
+                    },
+                    {
+                        "eventDtStr": "2025-03-05T19:00:00.000-0500",
+                        "eventTimeStamp": 1741201200000,
+                        "timeTba": "0",
+                        "extPrice": 0,
+                        "seatOHVos": [
+                            {
+                                "printedDtStr": "2024-12-11T00:00:00.000-0500",
+                                "section": "123",
+                                "printedDt": 1733875200000,
+                                "dispositionName": "All-IN-1 Pass Delayed Delivery",
+                                "level": "ST"
+                            }
+                        ],
+                        "cost": 0,
+                        "facility": "FIFTH THIRD ARENA",
+                        "qty": 0,
+                        "id": "MB17:1",
+                        "name": "Kansas State"
+                    },
+                    {
+                        "eventDtStr": "2025-03-29T00:00:00.000-0400",
+                        "eventTimeStamp": 1743292799000,
+                        "timeTba": "1",
+                        "extPrice": 0,
+                        "seatOHVos": [
+                            {
+                                "printedDtStr": "2024-12-11T00:00:00.000-0500",
+                                "section": "123",
+                                "printedDt": 1733875200000,
+                                "dispositionName": "All-IN-1 Pass Delayed Delivery",
+                                "level": "ST"
+                            }
+                        ],
+                        "cost": 0,
+                        "facility": "FIFTH THIRD ARENA",
+                        "qty": 0,
+                        "id": "MB99:1",
+                        "name": "Thank you for your order!"
+                    }
+                ],
+                "priceOHVos": [
+                    {
+                        "extPrice": 15000,
+                        "fee": 0,
+                        "plDesc": "Student",
+                        "ptDesc": "Conference + Xavier MBB Student Bundle",
+                        "perItemFee": 0,
+                        "amtReturned": 0,
+                        "cost": 0,
+                        "price": 15000,
+                        "qty": 1,
+                        "facFee": 0,
+                        "surcharge": 0,
+                        "discount": 0
+                    }
+                ],
+                "dispPymtHistFlg": "1",
+                "paymentOHVos": [
+                    {
+                        "amtPaid": 15000,
+                        "method": "Discover-7485"
+                    }
+                ],
+                "seasonCd": "MB25",
+                "qty": 1,
+                "balance": 0,
+                "totalPrice": 15000,
+                "orderDt": 1730678400000,
+                "type": "C",
+                "id": "MB25:CINN:CONFB:1",
+                "name": "Conference + Xavier Bundle"
+            },
+            {
+                "orderDtStr": "2024-05-28T00:00:00.000-0400",
+                "seasonSeq": 13,
+                "season": "2024 Football",
+                "dispPymtHistFlg": "1",
+                "seasonCd": "F24",
+                "qty": 0,
+                "balance": 0,
+                "totalPrice": 0,
+                "orderDt": 1716854400000,
+                "type": "O",
+                "id": "F24:CINN:NA:7",
+                "name": "NONE"
+            },
+            {
+                "orderDtStr": "2024-05-28T00:00:00.000-0400",
+                "seasonSeq": 13,
+                "eventTimeStamp": 1725114600000,
+                "season": "2024 Football",
+                "eventOHVos": [
+                    {
+                        "eventDtStr": "2024-08-31T14:30:00.000-0400",
+                        "eventTimeStamp": 1725114600000,
+                        "timeTba": "0",
+                        "extPrice": 0,
+                        "seatOHVos": [
+                            {
+                                "printedDtStr": "2024-08-28T00:00:00.000-0400",
+                                "printedDt": 1724803200000,
+                                "dispositionName": "All-IN-1 Pass Delayed Delivery",
+                                "level": "Gen Adm"
+                            }
+                        ],
+                        "cost": 0,
+                        "facility": "NIPPERT STADIUM",
+                        "qty": 0,
+                        "id": "F01:5",
+                        "name": "UC Football vs. Towson"
+                    },
+                    {
+                        "eventDtStr": "2024-09-07T12:00:00.000-0400",
+                        "eventTimeStamp": 1725710400000,
+                        "timeTba": "0",
+                        "extPrice": 0,
+                        "seatOHVos": [
+                            {
+                                "printedDtStr": "2024-08-28T00:00:00.000-0400",
+                                "printedDt": 1724803200000,
+                                "dispositionName": "All-IN-1 Pass Delayed Delivery",
+                                "level": "Gen Adm"
+                            }
+                        ],
+                        "cost": 0,
+                        "facility": "NIPPERT STADIUM",
+                        "qty": 0,
+                        "id": "F02:5",
+                        "name": "UC Football vs. Pittsburgh"
+                    },
+                    {
+                        "eventDtStr": "2024-09-21T12:00:00.000-0400",
+                        "eventTimeStamp": 1726920000000,
+                        "timeTba": "0",
+                        "extPrice": 0,
+                        "seatOHVos": [
+                            {
+                                "printedDtStr": "2024-08-28T00:00:00.000-0400",
+                                "printedDt": 1724803200000,
+                                "dispositionName": "All-IN-1 Pass Delayed Delivery",
+                                "level": "Gen Adm"
+                            }
+                        ],
+                        "cost": 0,
+                        "facility": "NIPPERT STADIUM",
+                        "qty": 0,
+                        "id": "F03:5",
+                        "name": "UC Football vs. Houston"
+                    },
+                    {
+                        "eventDtStr": "2024-10-19T12:00:00.000-0400",
+                        "eventTimeStamp": 1729339200000,
+                        "timeTba": "0",
+                        "extPrice": 0,
+                        "seatOHVos": [
+                            {
+                                "printedDtStr": "2024-08-28T00:00:00.000-0400",
+                                "printedDt": 1724803200000,
+                                "dispositionName": "All-IN-1 Pass Delayed Delivery",
+                                "level": "Gen Adm"
+                            }
+                        ],
+                        "cost": 0,
+                        "facility": "NIPPERT STADIUM",
+                        "qty": 0,
+                        "id": "F04:5",
+                        "name": "UC Football vs. Arizona State"
+                    },
+                    {
+                        "eventDtStr": "2024-11-09T12:00:00.000-0500",
+                        "eventTimeStamp": 1731153600000,
+                        "timeTba": "0",
+                        "extPrice": 0,
+                        "seatOHVos": [
+                            {
+                                "printedDtStr": "2024-08-28T00:00:00.000-0400",
+                                "printedDt": 1724803200000,
+                                "dispositionName": "All-IN-1 Pass Delayed Delivery",
+                                "level": "Gen Adm"
+                            }
+                        ],
+                        "cost": 0,
+                        "facility": "NIPPERT STADIUM",
+                        "qty": 0,
+                        "id": "F05:5",
+                        "name": "UC Football vs. West Virginia"
+                    },
+                    {
+                        "eventDtStr": "2024-11-30T18:00:00.000-0500",
+                        "eventTimeStamp": 1732989600000,
+                        "timeTba": "0",
+                        "extPrice": 0,
+                        "seatOHVos": [
+                            {
+                                "printedDtStr": "2024-08-28T00:00:00.000-0400",
+                                "printedDt": 1724803200000,
+                                "dispositionName": "All-IN-1 Pass Delayed Delivery",
+                                "level": "Gen Adm"
+                            }
+                        ],
+                        "cost": 0,
+                        "facility": "NIPPERT STADIUM",
+                        "qty": 0,
+                        "id": "F06:5",
+                        "name": "UC Football vs. TCU"
+                    },
+                    {
+                        "eventDtStr": "2024-12-07T00:00:00.000-0500",
+                        "eventTimeStamp": 1733615999000,
+                        "timeTba": "1",
+                        "extPrice": 0,
+                        "seatOHVos": [
+                            {
+                                "printedDtStr": "2024-08-28T00:00:00.000-0400",
+                                "printedDt": 1724803200000,
+                                "dispositionName": "All-IN-1 Pass Delayed Delivery",
+                                "level": "Gen Adm"
+                            }
+                        ],
+                        "cost": 0,
+                        "facility": "NIPPERT STADIUM",
+                        "qty": 0,
+                        "id": "F07:5",
+                        "name": "Go Bearcats!"
+                    }
+                ],
+                "priceOHVos": [
+                    {
+                        "extPrice": 10000,
+                        "fee": 0,
+                        "plDesc": "Student Section",
+                        "ptDesc": "Student Season Ticket - Full Package",
+                        "perItemFee": 0,
+                        "amtReturned": 0,
+                        "cost": 0,
+                        "price": 10000,
+                        "qty": 1,
+                        "facFee": 0,
+                        "surcharge": 0,
+                        "discount": 0
+                    }
+                ],
+                "dispPymtHistFlg": "1",
+                "paymentOHVos": [
+                    {
+                        "amtPaid": 10000,
+                        "method": "Discover-7485"
+                    }
+                ],
+                "seasonCd": "F24",
+                "qty": 1,
+                "balance": 0,
+                "totalPrice": 10000,
+                "orderDt": 1716854400000,
+                "type": "C",
+                "id": "F24:CINN:SST:5",
+                "name": "Student Season Ticket - Full Package"
+            },
+            {
+                "orderDtStr": "2024-04-10T00:00:00.000-0400",
+                "seasonSeq": 13,
+                "eventTimeStamp": 1712862000000,
+                "season": "2024 Football",
+                "eventOHVos": [
+                    {
+                        "eventDtStr": "2024-04-11T19:00:00.000-0400",
+                        "eventTimeStamp": 1712862000000,
+                        "timeTba": "0",
+                        "extPrice": 0,
+                        "seatOHVos": [
+                            {
+                                "printedDtStr": "2024-04-11T00:00:00.000-0400",
+                                "section": "108",
+                                "printedDt": 1712793600000,
+                                "dispositionName": "Mobile Delivery",
+                                "level": "ST"
+                            }
+                        ],
+                        "cost": 0,
+                        "facility": "FIFTH THIRD ARENA",
+                        "qty": 0,
+                        "id": "NH:4",
+                        "name": "New Heights LIVE"
+                    }
+                ],
+                "priceOHVos": [
+                    {
+                        "extPrice": 0,
+                        "fee": 0,
+                        "plDesc": "Student",
+                        "ptDesc": "UC Student",
+                        "perItemFee": 0,
+                        "amtReturned": 0,
+                        "cost": 0,
+                        "price": 0,
+                        "qty": 1,
+                        "facFee": 0,
+                        "surcharge": 0,
+                        "discount": 0
+                    }
+                ],
+                "dispPymtHistFlg": "1",
+                "seasonCd": "F24",
+                "qty": 1,
+                "balance": 0,
+                "totalPrice": 0,
+                "orderDt": 1712707200000,
+                "type": "S",
+                "id": "F24:CINN:NH:4",
+                "name": "New Heights LIVE"
+            },
+            {
+                "orderDtStr": "2024-04-03T00:00:00.000-0400",
+                "seasonSeq": 13,
+                "eventTimeStamp": 1712775600000,
+                "season": "2024 Football",
+                "eventOHVos": [
+                    {
+                        "eventDtStr": "2024-04-10T19:00:00.000-0400",
+                        "eventTimeStamp": 1712775600000,
+                        "timeTba": "0",
+                        "extPrice": 0,
+                        "seatOHVos": [
+                            {
+                                "section": "112",
+                                "dispositionName": "Mobile Delivery",
+                                "level": "L"
+                            }
+                        ],
+                        "cost": 0,
+                        "facility": "NIPPERT STADIUM",
+                        "qty": 0,
+                        "id": "NEWHEIGHTS:3",
+                        "name": "New Heights Live Show"
+                    }
+                ],
+                "priceOHVos": [
+                    {
+                        "extPrice": 0,
+                        "fee": 0,
+                        "plDesc": "Students",
+                        "ptDesc": "UC Student",
+                        "perItemFee": 0,
+                        "amtReturned": 0,
+                        "cost": 0,
+                        "price": 0,
+                        "qty": 1,
+                        "facFee": 0,
+                        "surcharge": 0,
+                        "discount": 0
+                    }
+                ],
+                "dispPymtHistFlg": "1",
+                "seasonCd": "F24",
+                "qty": 1,
+                "balance": 0,
+                "totalPrice": 0,
+                "orderDt": 1712102400000,
+                "type": "S",
+                "id": "F24:CINN:NEWHEIGHTS:3",
+                "name": "New Heights Live Show"
+            },
+            {
+                "orderDtStr": "2024-04-03T00:00:00.000-0400",
+                "seasonSeq": 13,
+                "season": "2024 Football",
+                "dispPymtHistFlg": "1",
+                "seasonCd": "F24",
+                "qty": 0,
+                "balance": 0,
+                "totalPrice": 0,
+                "orderDt": 1712102400000,
+                "type": "O",
+                "id": "F24:CINN:NA:6",
+                "name": "NONE"
+            },
+            {
+                "orderDtStr": "2024-03-20T00:00:00.000-0400",
+                "seasonSeq": 13,
+                "season": "2024 Football",
+                "priceOHVos": [
+                    {
+                        "extPrice": 0,
+                        "fee": 0,
+                        "perItemFee": 0,
+                        "amtReturned": 0,
+                        "cost": 0,
+                        "dispositionName": "NOT APPLICABLE",
+                        "price": 0,
+                        "qty": 1,
+                        "facFee": 0,
+                        "surcharge": 0,
+                        "discount": 0
+                    }
+                ],
+                "dispPymtHistFlg": "1",
+                "seasonCd": "F24",
+                "qty": 1,
+                "balance": 0,
+                "totalPrice": 0,
+                "orderDt": 1710892800000,
+                "type": "M",
+                "id": "F24:CINN:NHSTUDL:2",
+                "name": "New Heights Student Lottery"
+            },
+            {
+                "orderDtStr": "2024-05-17T00:00:00.000-0400",
+                "seasonSeq": 12,
+                "eventTimeStamp": 1715965200000,
+                "season": "2024 Baseball",
+                "eventOHVos": [
+                    {
+                        "eventDtStr": "2024-05-17T17:00:00.000-0500",
+                        "eventTimeStamp": 1715965200000,
+                        "timeTba": "0",
+                        "extPrice": 0,
+                        "seatOHVos": [
+                            {
+                                "printedDtStr": "2024-05-17T00:00:00.000-0400",
+                                "printedDt": 1715904000000,
+                                "dispositionName": "Mobile Delivery",
+                                "level": "Gen Adm"
+                            }
+                        ],
+                        "cost": 0,
+                        "facility": "UC Baseball Stadium",
+                        "qty": 0,
+                        "id": "BB26:8",
+                        "name": "Oklahoma "
+                    }
+                ],
+                "priceOHVos": [
+                    {
+                        "extPrice": 0,
+                        "fee": 0,
+                        "plDesc": "General Admission",
+                        "ptDesc": "Student ",
+                        "perItemFee": 0,
+                        "amtReturned": 0,
+                        "cost": 0,
+                        "price": 0,
+                        "qty": 1,
+                        "facFee": 0,
+                        "surcharge": 0,
+                        "discount": 0
+                    }
+                ],
+                "dispPymtHistFlg": "1",
+                "seasonCd": "BB24",
+                "qty": 1,
+                "balance": 0,
+                "totalPrice": 0,
+                "orderDt": 1715904000000,
+                "type": "S",
+                "id": "BB24:CINN:BB26:8",
+                "name": "Oklahoma "
+            },
+            {
+                "orderDtStr": "2023-08-21T00:00:00.000-0400",
+                "seasonSeq": 8,
+                "eventTimeStamp": 1693668600000,
+                "season": "2023 Football",
+                "eventOHVos": [
+                    {
+                        "eventDtStr": "2023-09-02T15:30:00.000-0400",
+                        "eventTimeStamp": 1693668600000,
+                        "timeTba": "0",
+                        "extPrice": 0,
+                        "seatOHVos": [
+                            {
+                                "printedDtStr": "2023-08-21T00:00:00.000-0400",
+                                "printedDt": 1692576000000,
+                                "dispositionName": "Mobile Delivery ",
+                                "level": "Gen Adm"
+                            }
+                        ],
+                        "cost": 0,
+                        "facility": "NIPPERT STADIUM",
+                        "qty": 0,
+                        "id": "F01:9",
+                        "name": "UC Football vs. Eastern Kentucky"
+                    },
+                    {
+                        "eventDtStr": "2023-09-16T19:00:00.000-0400",
+                        "eventTimeStamp": 1694890800000,
+                        "timeTba": "0",
+                        "extPrice": 0,
+                        "seatOHVos": [
+                            {
+                                "printedDtStr": "2023-08-21T00:00:00.000-0400",
+                                "printedDt": 1692576000000,
+                                "dispositionName": "Mobile Delivery ",
+                                "level": "Gen Adm"
+                            }
+                        ],
+                        "cost": 0,
+                        "facility": "NIPPERT STADIUM",
+                        "qty": 0,
+                        "id": "F02:9",
+                        "name": "UC Football vs. Miami (OH)"
+                    },
+                    {
+                        "eventDtStr": "2023-09-23T12:00:00.000-0400",
+                        "eventTimeStamp": 1695470400000,
+                        "timeTba": "0",
+                        "extPrice": 0,
+                        "seatOHVos": [
+                            {
+                                "printedDtStr": "2023-08-21T00:00:00.000-0400",
+                                "printedDt": 1692576000000,
+                                "dispositionName": "Mobile Delivery ",
+                                "level": "Gen Adm"
+                            }
+                        ],
+                        "cost": 0,
+                        "facility": "NIPPERT STADIUM",
+                        "qty": 0,
+                        "id": "F03:9",
+                        "name": "UC Football vs. Oklahoma"
+                    },
+                    {
+                        "eventDtStr": "2023-10-14T12:00:00.000-0400",
+                        "eventTimeStamp": 1697284800000,
+                        "timeTba": "0",
+                        "extPrice": 0,
+                        "seatOHVos": [
+                            {
+                                "printedDtStr": "2023-08-21T00:00:00.000-0400",
+                                "printedDt": 1692576000000,
+                                "dispositionName": "Mobile Delivery ",
+                                "level": "Gen Adm"
+                            }
+                        ],
+                        "cost": 0,
+                        "facility": "NIPPERT STADIUM",
+                        "qty": 0,
+                        "id": "F04:9",
+                        "name": "UC Football vs. Iowa State"
+                    },
+                    {
+                        "eventDtStr": "2023-10-21T12:00:00.000-0400",
+                        "eventTimeStamp": 1697889600000,
+                        "timeTba": "0",
+                        "extPrice": 0,
+                        "seatOHVos": [
+                            {
+                                "printedDtStr": "2023-08-21T00:00:00.000-0400",
+                                "printedDt": 1692576000000,
+                                "dispositionName": "Mobile Delivery ",
+                                "level": "Gen Adm"
+                            }
+                        ],
+                        "cost": 0,
+                        "facility": "NIPPERT STADIUM",
+                        "qty": 0,
+                        "id": "F05:9",
+                        "name": "UC Football vs. Baylor"
+                    },
+                    {
+                        "eventDtStr": "2023-11-04T15:30:00.000-0400",
+                        "eventTimeStamp": 1699111800000,
+                        "timeTba": "0",
+                        "extPrice": 0,
+                        "seatOHVos": [
+                            {
+                                "printedDtStr": "2023-08-21T00:00:00.000-0400",
+                                "printedDt": 1692576000000,
+                                "dispositionName": "Mobile Delivery ",
+                                "level": "Gen Adm"
+                            }
+                        ],
+                        "cost": 0,
+                        "facility": "NIPPERT STADIUM",
+                        "qty": 0,
+                        "id": "F06:9",
+                        "name": "UC Football vs. UCF"
+                    },
+                    {
+                        "eventDtStr": "2023-11-25T19:30:00.000-0500",
+                        "eventTimeStamp": 1700940600000,
+                        "timeTba": "0",
+                        "extPrice": 0,
+                        "seatOHVos": [
+                            {
+                                "printedDtStr": "2023-08-21T00:00:00.000-0400",
+                                "printedDt": 1692576000000,
+                                "dispositionName": "Mobile Delivery ",
+                                "level": "Gen Adm"
+                            }
+                        ],
+                        "cost": 0,
+                        "facility": "NIPPERT STADIUM",
+                        "qty": 0,
+                        "id": "F07:9",
+                        "name": "UC Football vs. Kansas"
+                    },
+                    {
+                        "eventDtStr": "2023-12-02T00:00:00.000-0500",
+                        "eventTimeStamp": 1701561599000,
+                        "timeTba": "1",
+                        "extPrice": 0,
+                        "seatOHVos": [
+                            {
+                                "printedDtStr": "2023-08-21T00:00:00.000-0400",
+                                "printedDt": 1692576000000,
+                                "dispositionName": "Mobile Delivery ",
+                                "level": "Gen Adm"
+                            }
+                        ],
+                        "cost": 0,
+                        "facility": "NIPPERT STADIUM",
+                        "qty": 0,
+                        "id": "F08:9",
+                        "name": "Go Bearcats!"
+                    }
+                ],
+                "priceOHVos": [
+                    {
+                        "extPrice": 10000,
+                        "fee": 0,
+                        "plDesc": "Student Section",
+                        "ptDesc": "Student Season Ticket",
+                        "perItemFee": 0,
+                        "amtReturned": 0,
+                        "cost": 0,
+                        "price": 10000,
+                        "qty": 1,
+                        "facFee": 0,
+                        "surcharge": 0,
+                        "discount": 0
+                    }
+                ],
+                "dispPymtHistFlg": "1",
+                "paymentOHVos": [
+                    {
+                        "amtPaid": 10000,
+                        "method": "Visa-2856"
+                    }
+                ],
+                "seasonCd": "F23",
+                "qty": 1,
+                "balance": 0,
+                "totalPrice": 10000,
+                "orderDt": 1692576000000,
+                "type": "C",
+                "id": "F23:CINN:SST:9",
+                "name": "Student Season Ticket - Full Package"
+            },
+            {
+                "orderDtStr": "2023-04-18T00:00:00.000-0400",
+                "seasonSeq": 8,
+                "season": "2023 Football",
+                "dispPymtHistFlg": "1",
+                "paymentOHVos": [
+                    {
+                        "amtPaid": 500,
+                        "method": "Visa-2856"
+                    }
+                ],
+                "seasonCd": "F23",
+                "qty": 0,
+                "balance": 0,
+                "totalPrice": 500,
+                "orderDt": 1681776000000,
+                "type": "O",
+                "id": "F23:CINN:H5:10",
+                "name": "$5 Handling"
+            },
+            {
+                "orderDtStr": "2022-11-14T00:00:00.000-0500",
+                "seasonSeq": 7,
+                "season": "2022 Football",
+                "priceOHVos": [
+                    {
+                        "extPrice": 0,
+                        "fee": 0,
+                        "perItemFee": 0,
+                        "amtReturned": 0,
+                        "cost": 0,
+                        "dispositionName": "Mobile Delivery",
+                        "price": 0,
+                        "qty": 1,
+                        "facFee": 0,
+                        "surcharge": 0,
+                        "discount": 0
+                    }
+                ],
+                "dispPymtHistFlg": "1",
+                "seasonCd": "F22",
+                "qty": 1,
+                "balance": 0,
+                "totalPrice": 0,
+                "orderDt": 1668384000000,
+                "type": "M",
+                "id": "F22:CINN:TRF:13",
+                "name": "F22 Offset Item"
+            },
+            {
+                "orderDtStr": "2022-08-16T00:00:00.000-0400",
+                "seasonSeq": 7,
+                "eventTimeStamp": 1663416000000,
+                "season": "2022 Football",
+                "eventOHVos": [
+                    {
+                        "eventDtStr": "2022-09-17T12:00:00.000-0400",
+                        "eventTimeStamp": 1663416000000,
+                        "timeTba": "0",
+                        "extPrice": 0,
+                        "seatOHVos": [
+                            {
+                                "printedDtStr": "2022-09-12T00:00:00.000-0400",
+                                "printedDt": 1662940800000,
+                                "dispositionName": "Mobile Delivery ",
+                                "level": "Gen Adm"
+                            }
+                        ],
+                        "cost": 0,
+                        "facility": "PAYCOR STADIUM",
+                        "qty": 0,
+                        "id": "F09:12",
+                        "name": "UC Football vs. Miami (OH) at Paycor Stadium"
+                    }
+                ],
+                "priceOHVos": [
+                    {
+                        "extPrice": 0,
+                        "fee": 0,
+                        "plDesc": "Students",
+                        "ptDesc": "Student",
+                        "perItemFee": 0,
+                        "amtReturned": 0,
+                        "cost": 0,
+                        "price": 0,
+                        "qty": 1,
+                        "facFee": 0,
+                        "surcharge": 0,
+                        "discount": 0
+                    }
+                ],
+                "dispPymtHistFlg": "1",
+                "seasonCd": "F22",
+                "qty": 1,
+                "balance": 0,
+                "totalPrice": 0,
+                "orderDt": 1660608000000,
+                "type": "S",
+                "id": "F22:CINN:F09:12",
+                "name": "UC Football vs. Miami (OH) at Paycor Stadium"
+            },
+            {
+                "orderDtStr": "2022-05-10T00:00:00.000-0400",
+                "seasonSeq": 7,
+                "eventTimeStamp": 1662823800000,
+                "season": "2022 Football",
+                "eventOHVos": [
+                    {
+                        "eventDtStr": "2022-09-10T15:30:00.000-0400",
+                        "eventTimeStamp": 1662823800000,
+                        "timeTba": "0",
+                        "extPrice": 0,
+                        "seatOHVos": [
+                            {
+                                "printedDtStr": "2022-09-06T00:00:00.000-0400",
+                                "section": "111",
+                                "printedDt": 1662422400000,
+                                "dispositionName": "Mobile Delivery ",
+                                "level": "L"
+                            }
+                        ],
+                        "cost": 0,
+                        "facility": "NIPPERT STADIUM",
+                        "qty": 0,
+                        "id": "F01:11",
+                        "name": "</a>UC Football vs. Kennesaw State"
+                    },
+                    {
+                        "eventDtStr": "2022-09-24T15:30:00.000-0400",
+                        "eventTimeStamp": 1664033400000,
+                        "timeTba": "0",
+                        "extPrice": 0,
+                        "seatOHVos": [
+                            {
+                                "printedDtStr": "2022-09-06T00:00:00.000-0400",
+                                "section": "111",
+                                "printedDt": 1662422400000,
+                                "dispositionName": "Mobile Delivery ",
+                                "level": "L"
+                            }
+                        ],
+                        "cost": 0,
+                        "facility": "NIPPERT STADIUM",
+                        "qty": 0,
+                        "id": "F02:11",
+                        "name": "</a>UC Football vs. Indiana"
+                    },
+                    {
+                        "eventDtStr": "2022-10-08T14:30:00.000-0400",
+                        "eventTimeStamp": 1665239400000,
+                        "timeTba": "0",
+                        "extPrice": 0,
+                        "seatOHVos": [
+                            {
+                                "printedDtStr": "2022-09-06T00:00:00.000-0400",
+                                "section": "111",
+                                "printedDt": 1662422400000,
+                                "dispositionName": "Mobile Delivery ",
+                                "level": "L"
+                            }
+                        ],
+                        "cost": 0,
+                        "facility": "NIPPERT STADIUM",
+                        "qty": 0,
+                        "id": "F03:11",
+                        "name": "</a>UC Football vs. South Florida"
+                    },
+                    {
+                        "eventDtStr": "2022-11-05T16:00:00.000-0400",
+                        "eventTimeStamp": 1667664000000,
+                        "timeTba": "0",
+                        "extPrice": 0,
+                        "seatOHVos": [
+                            {
+                                "printedDtStr": "2022-09-06T00:00:00.000-0400",
+                                "section": "111",
+                                "printedDt": 1662422400000,
+                                "dispositionName": "Mobile Delivery ",
+                                "level": "L"
+                            }
+                        ],
+                        "cost": 0,
+                        "facility": "NIPPERT STADIUM",
+                        "qty": 0,
+                        "id": "F04:11",
+                        "name": "</a>UC Football vs. Navy"
+                    },
+                    {
+                        "eventDtStr": "2022-11-11T20:00:00.000-0500",
+                        "eventTimeStamp": 1668196800000,
+                        "timeTba": "0",
+                        "extPrice": 0,
+                        "seatOHVos": [
+                            {
+                                "printedDtStr": "2022-09-06T00:00:00.000-0400",
+                                "section": "111",
+                                "printedDt": 1662422400000,
+                                "dispositionName": "Mobile Delivery ",
+                                "level": "L"
+                            }
+                        ],
+                        "cost": 0,
+                        "facility": "NIPPERT STADIUM",
+                        "qty": 0,
+                        "id": "F05:11",
+                        "name": "</a>UC Football vs. East Carolina"
+                    },
+                    {
+                        "eventDtStr": "2022-12-03T00:00:00.000-0500",
+                        "eventTimeStamp": 1670111999000,
+                        "timeTba": "1",
+                        "extPrice": 0,
+                        "seatOHVos": [
+                            {
+                                "printedDtStr": "2022-09-06T00:00:00.000-0400",
+                                "section": "111",
+                                "printedDt": 1662422400000,
+                                "dispositionName": "Mobile Delivery ",
+                                "level": "L"
+                            }
+                        ],
+                        "cost": 0,
+                        "facility": "NIPPERT STADIUM",
+                        "qty": 0,
+                        "id": "F07:11",
+                        "name": "Go Bearcats!"
+                    }
+                ],
+                "priceOHVos": [
+                    {
+                        "extPrice": 7000,
+                        "fee": 0,
+                        "plDesc": "Student Section",
+                        "ptDesc": "Student Season Ticket",
+                        "perItemFee": 0,
+                        "amtReturned": 0,
+                        "cost": 0,
+                        "price": 7000,
+                        "qty": 1,
+                        "facFee": 0,
+                        "surcharge": 0,
+                        "discount": 0
+                    }
+                ],
+                "dispPymtHistFlg": "1",
+                "paymentOHVos": [
+                    {
+                        "amtPaid": 7000,
+                        "method": "Visa-2856"
+                    }
+                ],
+                "seasonCd": "F22",
+                "qty": 1,
+                "balance": 0,
+                "totalPrice": 7000,
+                "orderDt": 1652140800000,
+                "type": "C",
+                "id": "F22:CINN:FS:11",
+                "name": "Football Season Ticket"
+            },
+            {
+                "orderDtStr": "2022-03-22T00:00:00.000-0400",
+                "seasonSeq": 7,
+                "season": "2022 Football",
+                "dispPymtHistFlg": "1",
+                "paymentOHVos": [
+                    {
+                        "amtPaid": 300,
+                        "method": "Visa-2856"
+                    }
+                ],
+                "seasonCd": "F22",
+                "qty": 0,
+                "balance": 0,
+                "totalPrice": 300,
+                "orderDt": 1647907200000,
+                "type": "O",
+                "id": "F22:CINN:H3:14",
+                "name": "$3 Handling"
+            },
+            {
+                "orderDtStr": "2023-01-06T00:00:00.000-0500",
+                "seasonSeq": 6,
+                "eventTimeStamp": 1673190000000,
+                "season": "2022-23 Men's Basketball",
+                "eventOHVos": [
+                    {
+                        "eventDtStr": "2023-01-08T15:00:00.000-0500",
+                        "eventTimeStamp": 1673190000000,
+                        "timeTba": "0",
+                        "extPrice": 0,
+                        "seatOHVos": [
+                            {
+                                "printedDtStr": "2023-01-06T00:00:00.000-0500",
+                                "section": "122",
+                                "printedDt": 1672963200000,
+                                "dispositionName": "Mobile Delivery",
+                                "level": "ST"
+                            }
+                        ],
+                        "cost": 0,
+                        "facility": "FIFTH THIRD ARENA",
+                        "qty": 0,
+                        "id": "MB11:16",
+                        "name": "Men's Basketball vs. Houston"
+                    }
+                ],
+                "priceOHVos": [
+                    {
+                        "extPrice": 0,
+                        "fee": 0,
+                        "plDesc": "Student Section",
+                        "ptDesc": "Student",
+                        "perItemFee": 0,
+                        "amtReturned": 0,
+                        "cost": 0,
+                        "price": 0,
+                        "qty": 1,
+                        "facFee": 0,
+                        "surcharge": 0,
+                        "discount": 0
+                    }
+                ],
+                "dispPymtHistFlg": "1",
+                "seasonCd": "MB23",
+                "qty": 1,
+                "balance": 0,
+                "totalPrice": 0,
+                "orderDt": 1672963200000,
+                "type": "S",
+                "id": "MB23:CINN:MB11:16",
+                "name": "Men's Basketball vs. Houston"
+            },
+            {
+                "orderDtStr": "2022-12-07T00:00:00.000-0500",
+                "seasonSeq": 6,
+                "eventTimeStamp": 1670684400000,
+                "season": "2022-23 Men's Basketball",
+                "eventOHVos": [
+                    {
+                        "eventDtStr": "2022-12-10T15:00:00.000-0500",
+                        "eventTimeStamp": 1670684400000,
+                        "timeTba": "0",
+                        "extPrice": 0,
+                        "seatOHVos": [
+                            {
+                                "printedDtStr": "2022-12-09T00:00:00.000-0500",
+                                "section": "110",
+                                "printedDt": 1670544000000,
+                                "dispositionName": "Mobile Delivery ",
+                                "level": "ST"
+                            }
+                        ],
+                        "cost": 0,
+                        "facility": "FIFTH THIRD ARENA",
+                        "qty": 0,
+                        "id": "MB06:15",
+                        "name": "</a>Men's Basketball vs. Xavier"
+                    }
+                ],
+                "priceOHVos": [
+                    {
+                        "extPrice": 0,
+                        "fee": 0,
+                        "plDesc": "Student Section",
+                        "ptDesc": "Student",
+                        "perItemFee": 0,
+                        "amtReturned": 0,
+                        "cost": 0,
+                        "price": 0,
+                        "qty": 1,
+                        "facFee": 0,
+                        "surcharge": 0,
+                        "discount": 0
+                    }
+                ],
+                "dispPymtHistFlg": "1",
+                "seasonCd": "MB23",
+                "qty": 1,
+                "balance": 0,
+                "totalPrice": 0,
+                "orderDt": 1670371200000,
+                "type": "S",
+                "id": "MB23:CINN:MB06:15",
+                "name": "</a>Men's Basketball vs. Xavier"
+            }
+        ],
+        "moreItems": false,
+        "requestType": "ORDERS",
+        "message": "Thank you for using the Bearcats Online Ticket Office. Below is your order history for eligible seasons.\n"
+    }
+}

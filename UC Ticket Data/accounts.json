@@ -1,0 +1,170 @@
+{
+    "key": {
+        "id": "13219175",
+        "dbId": "CINN"
+    },
+    "accountType": "I",
+    "accountName": " Schult",
+    "accountStatusId": "A",
+    "accountStatusName": "Active",
+    "preferredLanguageId": "en_US",
+    "primaryContactId": "0ed446b0-2b33-11e9-ade4-0000c0a83607",
+    "tktMailAddrId": null,
+    "tktBillAddrId": "P",
+    "fndMailAddrId": null,
+    "fndBillAddrId": null,
+    "extIds": null,
+    "creditCards": null,
+    "bankAccount": null,
+    "profileIds": null,
+    "orgName": null,
+    "orgAddresses": null,
+    "loginEmail": "schultpo@mail.uc.edu",
+    "primaryContact": {
+        "key": {
+            "id": "0ed446b0-2b33-11e9-ade4-0000c0a83607",
+            "accountId": "13219175",
+            "dbId": "CINN"
+        },
+        "imageId": null,
+        "name": {
+            "first": "Payton",
+            "last": "Schult",
+            "middle": null
+        },
+        "phones": [
+            {
+                "type": "C",
+                "number": "(513) 760-3620",
+                "donotcall": false,
+                "label": "Cell Phone"
+            },
+            {
+                "type": "M",
+                "number": "132-19-175",
+                "donotcall": false,
+                "label": "M-Number"
+            },
+            {
+                "type": "H",
+                "number": "(513) 697-7085",
+                "donotcall": false,
+                "label": "Home Phone"
+            }
+        ],
+        "emails": [
+            {
+                "value1": "E",
+                "value2": "schultpo@mail.uc.edu",
+                "label": "Email Address"
+            }
+        ],
+        "addresses": [
+            {
+                "type": "P",
+                "mailname": "Payton Schult",
+                "address1": "2270 Candlemakers Ln",
+                "address2": null,
+                "address3": null,
+                "careof": null,
+                "city": "Maineville",
+                "county": "Warren",
+                "state": "OH",
+                "zipcode": "45039",
+                "country": "US",
+                "datefrom": null,
+                "dateto": null,
+                "yearlyfl": 0,
+                "year": "",
+                "regionid": null,
+                "label": "Primary"
+            }
+        ]
+    },
+    "contacts": [
+        {
+            "key": {
+                "id": "0ed446b0-2b33-11e9-ade4-0000c0a83607",
+                "accountId": "13219175",
+                "dbId": "CINN"
+            },
+            "imageId": null,
+            "name": {
+                "first": "Payton",
+                "last": "Schult",
+                "middle": null
+            },
+            "phones": [
+                {
+                    "type": "C",
+                    "number": "(513) 760-3620",
+                    "donotcall": false,
+                    "label": "Cell Phone"
+                },
+                {
+                    "type": "M",
+                    "number": "132-19-175",
+                    "donotcall": false,
+                    "label": "M-Number"
+                },
+                {
+                    "type": "H",
+                    "number": "(513) 697-7085",
+                    "donotcall": false,
+                    "label": "Home Phone"
+                }
+            ],
+            "emails": [
+                {
+                    "value1": "E",
+                    "value2": "schultpo@mail.uc.edu",
+                    "label": "Email Address"
+                }
+            ],
+            "addresses": [
+                {
+                    "type": "P",
+                    "mailname": "Payton Schult",
+                    "address1": "2270 Candlemakers Ln",
+                    "address2": null,
+                    "address3": null,
+                    "careof": null,
+                    "city": "Maineville",
+                    "county": "Warren",
+                    "state": "OH",
+                    "zipcode": "45039",
+                    "country": "US",
+                    "datefrom": null,
+                    "dateto": null,
+                    "yearlyfl": 0,
+                    "year": "",
+                    "regionid": null,
+                    "label": "Primary"
+                }
+            ]
+        }
+    ],
+    "isStudent": true,
+    "cstmType": "S52",
+    "isCustomerActive": "1",
+    "dataAccountId": "675",
+    "billingAddress": {
+        "type": "P",
+        "mailname": "Payton Schult",
+        "address1": "2270 Candlemakers Ln",
+        "address2": null,
+        "address3": null,
+        "careof": null,
+        "city": "Maineville",
+        "county": "Warren",
+        "state": "OH",
+        "zipcode": "45039",
+        "country": "US",
+        "datefrom": null,
+        "dateto": null,
+        "yearlyfl": 0,
+        "year": "",
+        "regionid": null,
+        "label": "Primary"
+    }
+}

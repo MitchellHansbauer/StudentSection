@@ -1,0 +1,59 @@
+{
+    "status": {
+        "cd": 0,
+        "msg": ""
+    },
+    "result": [
+        {
+            "seasonCd": "MB25",
+            "seasonName": "2024-25 Men's Basketball",
+            "events": [
+                {
+                    "seasonCd": "MB25",
+                    "eventCd": "MB15",
+                    "eventName": "TCU",
+                    "facilityName": "FIFTH THIRD ARENA",
+                    "eventDt": "2025-02-22T17:00:00.000Z",
+                    "eventDtStr": "2025-02-22T17:00:00.000+0000",
+                    "eventDtTo": null,
+                    "eventDtStrTo": null,
+                    "eventDtType": "S",
+                    "eventDtToType": "N",
+                    "facilityTimezone": "12",
+                    "eventDtFacStr": "2025-02-22T12:00:00.000",
+                    "eventDtFacToStr": null
+                },
+                {
+                    "seasonCd": "MB25",
+                    "eventCd": "MB16",
+                    "eventName": "Baylor",
+                    "facilityName": "FIFTH THIRD ARENA",
+                    "eventDt": "2025-02-26T00:00:00.000Z",
+                    "eventDtStr": "2025-02-26T00:00:00.000+0000",
+                    "eventDtTo": null,
+                    "eventDtStrTo": null,
+                    "eventDtType": "S",
+                    "eventDtToType": "N",
+                    "facilityTimezone": "12",
+                    "eventDtFacStr": "2025-02-25T19:00:00.000",
+                    "eventDtFacToStr": null
+                },
+                {
+                    "seasonCd": "MB25",
+                    "eventCd": "MB17",
+                    "eventName": "Kansas State",
+                    "facilityName": "FIFTH THIRD ARENA",
+                    "eventDt": "2025-03-06T00:00:00.000Z",
+                    "eventDtStr": "2025-03-06T00:00:00.000+0000",
+                    "eventDtTo": null,
+                    "eventDtStrTo": null,
+                    "eventDtType": "S",
+                    "eventDtToType": "N",
+                    "facilityTimezone": "12",
+                    "eventDtFacStr": "2025-03-05T19:00:00.000",
+                    "eventDtFacToStr": null
+                }
+            ]
+        }
+    ]
+}
