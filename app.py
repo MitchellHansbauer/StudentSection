@@ -55,25 +55,26 @@ def get_mock_token():
 def create_user():
     data = request.get_json()
     
-    # Validate that required fields are present
-    required_fields = ["phone", "email", "password", "FirstName", "LastName", "School"]
+    # Minimal required fields
+    required_fields = ["email", "password"]
     for field in required_fields:
         if field not in data:
             return jsonify({"error": f"Missing field: {field}"}), 400
-    
+
     # Add createdAt field
     data['createdAt'] = datetime.now()
 
+    # Check if user already exists
     if users_collection.find_one({"email": data["email"]}):
         return jsonify({"error": "User already exists"}), 409
-    
-    # Insert the new user into MongoDB
+
     result = users_collection.insert_one(data)
     
     return jsonify({
         "message": "User created successfully",
         "user_id": str(result.inserted_id)
     }), 201
+
 
 @app.route('/users/login', methods=['POST'])
 def login():
@@ -94,6 +95,47 @@ def login():
     else:
         return jsonify({"error": "Invalid email or password"}), 401
 
+@app.route('/users/<string:user_id>/profile', methods=['GET'])
+def get_profile(user_id):
+    """
+    Return the user's profile info from MongoDB (including school_name if present).
+    """
+    user = users_collection.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    
+    # Hide sensitive info as needed
+    user['_id'] = str(user['_id'])
+    user.pop('password', None)
+    return jsonify({"profile": user}), 200
+
+
+@app.route('/users/<string:user_id>/profile', methods=['PUT'])
+def update_profile(user_id):
+    """
+    Update user fields in their MongoDB profile, e.g. phone, school_name, etc.
+    """
+    data = request.get_json()
+    # Accept any fields that are safe to update. For example:
+    updatable_fields = {"phone", "School", "FirstName", "LastName"}  # etc.
+    
+    to_update = {}
+    for field in updatable_fields:
+        if field in data:
+            to_update[field] = data[field]
+
+    if not to_update:
+        return jsonify({"error": "No valid fields to update"}), 400
+    
+    result = users_collection.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$set": to_update}
+    )
+    
+    if result.modified_count == 1:
+        return jsonify({"message": "Profile updated successfully"}), 200
+    else:
+        return jsonify({"error": "No changes or user not found"}), 400
 # # Endpoint to retrieve and store tickets for a user
 # @app.route('/tickets/list', methods=['POST'])
 # def list_tickets():

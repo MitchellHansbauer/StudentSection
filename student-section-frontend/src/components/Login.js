@@ -19,7 +19,7 @@ const LoginPage = ({ setUser }) => {
     setError('');
 
     if (isRegister) {
-      if (!email || !password || !firstName || !lastName || !phone || !school) {
+      if (!email || !password) {
         setError('Please fill in all required fields.');
         return;
       }
