@@ -5,13 +5,14 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 
 function ScheduleCalendar() {
-  const [schedules, setSchedules] = useState([]); // Store all available schedules
-  const [selectedSchool, setSelectedSchool] = useState(""); // Selected school
-  const [selectedEventType, setSelectedEventType] = useState(""); // Selected event type
+  const [schedules, setSchedules] = useState([]); // Aggregated schedules grouped by school
+  const [selectedSchool, setSelectedSchool] = useState("");
+  const [selectedEventType, setSelectedEventType] = useState("");
+  const [availableEventTypes, setAvailableEventTypes] = useState([]); // Available event types for the selected school
   const [events, setEvents] = useState([]); // Calendar events
   const [error, setError] = useState("");
 
-  // Fetch all schedules for dropdown
+  // Fetch aggregated schedules on component mount.
   useEffect(() => {
     axios
       .get("http://localhost:5000/schedule/all")
@@ -19,51 +20,69 @@ function ScheduleCalendar() {
       .catch((err) => console.error("Error fetching schedules:", err));
   }, []);
 
-  // Fetch filtered schedule when user selects a school/event type
+  // Update available event types when the selected school changes.
+  useEffect(() => {
+    if (selectedSchool) {
+      const schoolData = schedules.find(s => s._id === selectedSchool);
+      if (schoolData && schoolData.events) {
+        // Extract unique event types.
+        const eventTypes = schoolData.events.map(event => event.event_type);
+        const uniqueTypes = Array.from(new Set(eventTypes));
+        setAvailableEventTypes(uniqueTypes);
+      } else {
+        setAvailableEventTypes([]);
+      }
+    } else {
+      setAvailableEventTypes([]);
+    }
+    // Reset the selected event type when school changes.
+    setSelectedEventType("");
+  }, [selectedSchool, schedules]);
+
+  // Fetch and format schedule data based on selected school and event type.
   const fetchFilteredSchedule = () => {
     if (!selectedSchool) {
       setError("Please select a school.");
       return;
     }
 
-    const queryParams = new URLSearchParams();
-    queryParams.append("school_name", selectedSchool);
-    if (selectedEventType) {
-      queryParams.append("event_type", selectedEventType);
+    const schoolData = schedules.find(s => s._id === selectedSchool);
+    if (!schoolData) {
+      setError("No schedule found for the selected school.");
+      return;
     }
 
-    axios
-      .get(`http://localhost:5000/schedule/retrieve?${queryParams.toString()}`)
-      .then((res) => {
-        const schedule = res.data.schedules[0];
-        if (!schedule || !schedule.games) {
-          setEvents([]);
-          setError("No events found for the selected schedule.");
-          return;
-        }
-
-        // Convert schedule data into FullCalendar format
-        const formattedEvents = schedule.games.map((game) => ({
-          title: game.opponent || game.event_name || "Unnamed Event",
-          start: parseDate(game.date),
-          time: game.time || "TBD",
-          location: game.location || "Unknown Location",
-          additionalInfo: game.result || "", // Flexible for different event types
-        }));
-
-        setEvents(formattedEvents);
-        setError("");
-      })
-      .catch((err) => {
+    let eventData;
+    if (selectedEventType) {
+      // Find the event with the matching event type.
+      eventData = schoolData.events.find(
+        ev => ev.event_type.toLowerCase() === selectedEventType.toLowerCase()
+      );
+      if (!eventData) {
+        setError("No event found for the selected event type.");
         setEvents([]);
-        setError("No schedules found for the selected filters.");
-        console.error("Error fetching filtered schedule:", err);
-      });
+        return;
+      }
+    } else {
+      // If no event type is selected, combine games from all events.
+      eventData = { games: schoolData.events.reduce((acc, ev) => acc.concat(ev.games), []) };
+    }
+
+    // Convert the games array into FullCalendar event format.
+    const formattedEvents = eventData.games.map((game) => ({
+      title: game.opponent || eventData.event_type || "Unnamed Event",
+      start: parseDate(game.date),
+      time: game.time || "TBD",
+      location: game.location || "Unknown Location",
+      additionalInfo: game.result || "",
+    }));
+
+    setEvents(formattedEvents);
+    setError("");
   };
 
-  // Updated helper function to parse dates in MM/DD/YYYY format.
+  // Helper function to parse MM/DD/YYYY date strings.
   const parseDate = (dateString) => {
-    // If dateString is in MM/DD/YYYY format, split and construct the Date.
     if (dateString.includes('/')) {
       const parts = dateString.split('/');
       if (parts.length === 3) {
@@ -71,7 +90,6 @@ function ScheduleCalendar() {
         return new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
       }
     }
-    // Fallback: try to construct a Date directly.
     const d = new Date(dateString);
     return isNaN(d.getTime()) ? new Date() : d;
   };
@@ -88,24 +106,24 @@ function ScheduleCalendar() {
       >
         <option value="">Select School</option>
         {schedules.map((schedule, index) => (
-          <option key={index} value={schedule.school_name}>
-            {schedule.school_name}
+          <option key={index} value={schedule._id}>
+            {schedule._id}
           </option>
         ))}
       </select>
 
-      {/* Dropdown for Selecting Event Type (Optional) */}
+      {/* Dropdown for Selecting Event Type (Populated Dynamically) */}
       <select
         value={selectedEventType}
         onChange={(e) => setSelectedEventType(e.target.value)}
         style={{ padding: "10px", marginRight: "10px" }}
       >
         <option value="">All Event Types</option>
-        <option value="Football">Football</option>
-        <option value="Basketball">Basketball</option>
-        <option value="Music Concert">Music Concert</option>
-        <option value="Theater">Theater</option>
-        <option value="Conference">Conference</option>
+        {availableEventTypes.map((type, index) => (
+          <option key={index} value={type}>
+            {type}
+          </option>
+        ))}
       </select>
 
       {/* Button to Fetch Filtered Schedule */}
