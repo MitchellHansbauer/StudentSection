@@ -24,6 +24,7 @@ Before getting started, ensure you have the following installed on your machine:
    python -c 'import secrets; print(secrets.token_hex())'
    export SECRET_KEY=<TOKEN_FROM_ABOVE>
    ```
+   Note: use _set_ if on Windows
 4. **Start the Backend**:
    ```sh
    python app.py
