@@ -19,8 +19,12 @@ Before getting started, ensure you have the following installed on your machine:
    ```sh
    pip install -r requirements.txt
    ```
-
-3. **Start the Backend**:
+3. **Generate Redis Secret Key**:
+   ```sh
+   python -c 'import secrets; print(secrets.token_hex())'
+   export SECRET_KEY=<TOKEN_FROM_ABOVE>
+   ```
+4. **Start the Backend**:
    ```sh
    python app.py
    ```
