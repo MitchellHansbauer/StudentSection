@@ -64,6 +64,8 @@ function ScheduleBuilder() {
   const buildHtmlSchedule = () => {
     const headerLine = buildHeaderLine();
 
+    const finalSchoolName = schoolName.trim() ? schoolName.trim() : "public";
+
     // For each event row, build columns dynamically too
     const eventLines = events.map((ev) => {
       // Start with date, time, location:
@@ -110,7 +112,7 @@ function ScheduleBuilder() {
     // 3) eventType
     // 4) header line
     // 5+) each event line
-    const lines = [schoolName, year, eventType, headerLine, ...eventLines].join('\n');
+    const lines = [finalSchoolName, year, eventType, headerLine, ...eventLines].join('\n');
 
     // Wrap in <pre> for parse_html_schedule or your endpoint
     return `<html><body><pre>${lines}</pre></body></html>`;
@@ -230,7 +232,7 @@ function ScheduleBuilder() {
             <label>Date (required): </label>
             <input
               type="text"
-              placeholder="Month Day"
+              placeholder="Mon Day"
               value={ev.date}
               onChange={(e) => updateEventField(index, 'date', e.target.value)}
             />
