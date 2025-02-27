@@ -1,14 +1,16 @@
-from flask import Flask, request, jsonify, session
+from flask import Flask, request, jsonify, session, redirect, url_for
+from flask_session import Session
 from models import db, User, Ticket, Listing, Transaction, APILog
 from datetime import datetime
 import re
 import os
 import requests
+import redis
 from flask_cors import CORS
 from pymongo import MongoClient
 from pymongo import UpdateOne
 from bson import ObjectId
-from datetime import datetime
+from datetime import timedelta
 from schedule_parser import parse_html_schedule
 
 
@@ -16,7 +18,21 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///student_section.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
-CORS(app)  # Enable CORS
+CORS(app, supports_credentials=True)  # Enable CORS
+
+#Redis Integration - Secret Key
+app.secret_key = os.getenv('SECRET_KEY', default='BAD_SECRET_KEY')
+# Configure Redis for storing the session data on the server-side
+app.config['SESSION_TYPE'] = 'redis'
+app.config['SESSION_PERMANENT'] = True
+app.config['SESSION_USE_SIGNER'] = True
+app.config['SESSION_REDIS'] = redis.from_url('redis://127.0.0.1:6379')
+app.config['SESSION_COOKIE_SECURE'] = True # uses https or not
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(minutes=30)
+# Create and initialize the Flask-Session object AFTER `app` has been configured
+server_session = Session(app)
+
 
 # MongoDB connection
 client = MongoClient('mongodb+srv://dbadmin:Time2add@studentsectiondemo.9mdru.mongodb.net/?retryWrites=true&w=majority&appName=StudentSectionDemo')
@@ -87,12 +103,11 @@ def create_user():
     }), 201
 
 
-@app.route('/users/login', methods=['POST'])
+@app.route('/users/login', methods=['POST', 'GET'])
 def login():
     data = request.get_json()
     email = data.get("email")
     password = data.get("password")
-    
     if not email or not password:
         return jsonify({"error": "Email and password are required"}), 400
 
@@ -102,9 +117,19 @@ def login():
     if user:
         user["_id"] = str(user["_id"])
         user.pop("password", None)
+        session['school'] = user.get("School")
+        session['email'] = email
         return jsonify({"message": "Login successful", "user": user}), 200
     else:
         return jsonify({"error": "Invalid email or password"}), 401
+
+@app.route('/logout', methods=['POST'])
+def logout():
+    session.clear()  # Clear session
+    session.modified = True  # Ensure session is updated
+    response = jsonify({"message": "Logged out successfully"})
+    response.set_cookie('session', '', expires=0)  # Expire session cookie
+    return response, 200
 
 @app.route('/users/<string:user_id>/profile', methods=['GET'])
 def get_profile(user_id):
@@ -611,23 +636,9 @@ def upload_schedule():
 
 @app.route('/schedule/all', methods=['GET'])
 def retrieve_all_schedules():
-    """Retrieves all schedules grouped by school."""
+    """Retrieves all schedules stored in MongoDB."""
     try:
-        pipeline = [
-            {
-                '$group': {
-                    '_id': '$school_name', 
-                    'events': {
-                        '$push': {
-                            'year': '$year', 
-                            'event_type': '$event_type', 
-                            'games': '$games'
-                        }
-                    }
-                }
-            }
-        ]
-        schedules = list(schedules_collection.aggregate(pipeline))
+        schedules = list(schedules_collection.find({}, {"_id": 0}))
 
         if not schedules:
             return jsonify({"message": "No schedules found"}), 404
@@ -636,7 +647,6 @@ def retrieve_all_schedules():
 
     except Exception as e:
         return jsonify({"error": f"Failed to retrieve schedule data: {str(e)}"}), 500
-
 
 @app.route('/schedule/retrieve', methods=['GET'])
 def retrieve_schedule():
@@ -648,9 +658,9 @@ def retrieve_schedule():
         # Build the query dynamically based on provided filters.
         query = {}
         if school_name:
-            query["school_name"] = {"$regex": school_name, "$options": "i"}
+            query["school_name"] = {"$regex": school_name, "$options": "i"}  # Case-insensitive
         if event_type:
-            query["event_type"] = {"$regex": event_type, "$options": "i"} 
+            query["event_type"] = {"$regex": event_type, "$options": "i"}  # Now at the top level
 
         schedules = list(schedules_collection.find(query, {"_id": 0}))
 
