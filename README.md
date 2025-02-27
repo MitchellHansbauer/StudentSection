@@ -7,6 +7,7 @@ Before getting started, ensure you have the following installed on your machine:
 - **Virtual Environment** (for Python dependencies)
 - **MongoDB:** Ensure IP address is whitelisted in Mongo
 - **Redis:** Set up Redis running on port 6379 on the localhost/127.0.0.1
+     _note: Redis is Linux native, so this will need to be run in WSL on Windows_
 ## 🛠Installation & Setup
 ### 1️⃣ Set Up the Backend
 1. **Create & Activate a Virtual Environment** (if not already set up):
