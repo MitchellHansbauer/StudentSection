@@ -6,7 +6,7 @@ Before getting started, ensure you have the following installed on your machine:
 - **Node.js & npm** (for the frontend)
 - **Virtual Environment** (for Python dependencies)
 - **MongoDB:** Ensure IP address is whitelisted in Mongo
-- **Redis:** Set up Docker container running on port 6379 on the localhost
+- **Redis:** Set up Redis running on port 6379 on the localhost/127.0.0.1
 ## 🛠Installation & Setup
 ### 1️⃣ Set Up the Backend
 1. **Create & Activate a Virtual Environment** (if not already set up):
