@@ -4,6 +4,7 @@ from models import db, User, Ticket, Listing, Transaction, APILog
 from datetime import datetime
 import re
 import os
+import uuid
 import requests
 import redis
 from flask_cors import CORS
@@ -29,7 +30,11 @@ app.config['SESSION_USE_SIGNER'] = True
 app.config['SESSION_REDIS'] = redis.from_url('redis://127.0.0.1:6379')
 app.config['SESSION_COOKIE_SECURE'] = True # uses https or not
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
-app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(minutes=30)
+#Connect to Redis
+r = redis.Redis(host='localhost', port=6379, decode_responses=True)
+#Session ID Generation
+def generate_session_id():
+    return str(uuid.uuid4())
 # Create and initialize the Flask-Session object AFTER `app` has been configured
 server_session = Session(app)
 
@@ -108,6 +113,10 @@ def login():
     data = request.get_json()
     email = data.get("email")
     password = data.get("password")
+    #Define Session Variables
+    global sessionid
+    global username
+
     if not email or not password:
         return jsonify({"error": "Email and password are required"}), 400
 
@@ -117,8 +126,20 @@ def login():
     if user:
         user["_id"] = str(user["_id"])
         user.pop("password", None)
-        session['school'] = user.get("School")
-        session['email'] = email
+
+        #To do: Implement using previous session when a user tries to log in twice
+
+        #Session Information
+        index = email.index("@")
+        username = email[:index]
+        sessionid=username+"-"+generate_session_id()
+        r.hset(sessionid, mapping={
+        'email': email,
+        "school": user.get("School")
+        })
+        r.expire(sessionid, 21600)
+        #session['school'] = user.get("School")
+        #session['email'] = email
         return jsonify({"message": "Login successful", "user": user}), 200
     else:
         return jsonify({"error": "Invalid email or password"}), 401
@@ -129,6 +150,7 @@ def logout():
     session.modified = True  # Ensure session is updated
     response = jsonify({"message": "Logged out successfully"})
     response.set_cookie('session', '', expires=0)  # Expire session cookie
+    r.delete(sessionid)
     return response, 200
 
 @app.route('/users/<string:user_id>/profile', methods=['GET'])
