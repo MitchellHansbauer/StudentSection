@@ -127,19 +127,22 @@ def login():
         user["_id"] = str(user["_id"])
         user.pop("password", None)
 
-        #To do: Implement using previous session when a user tries to log in twice
-
         #Session Information
         index = email.index("@")
         username = email[:index]
-        sessionid=username+"-"+generate_session_id()
-        r.hset(sessionid, mapping={
-        'email': email,
-        "school": user.get("School")
-        })
-        r.expire(sessionid, 21600)
-        #session['school'] = user.get("School")
-        #session['email'] = email
+        #One user per session
+        sessioncall=r.scan(cursor=0, match=username+'*')
+        sessionbool=str(username) in str(sessioncall)
+        if (sessionbool):
+            sessionid=sessioncall[1][0]
+        else:
+            sessionid=username+"-"+generate_session_id()
+            r.hset(sessionid, mapping={
+            'email': email,
+            'school': user.get("School")
+            })
+            r.expire(sessionid, 21600)
+            
         return jsonify({"message": "Login successful", "user": user}), 200
     else:
         return jsonify({"error": "Invalid email or password"}), 401
