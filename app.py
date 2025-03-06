@@ -661,9 +661,23 @@ def upload_schedule():
 
 @app.route('/schedule/all', methods=['GET'])
 def retrieve_all_schedules():
-    """Retrieves all schedules stored in MongoDB."""
+    """Retrieves all schedules grouped by school."""
     try:
-        schedules = list(schedules_collection.find({}, {"_id": 0}))
+        pipeline = [
+            {
+                '$group': {
+                    '_id': '$school_name', 
+                    'events': {
+                        '$push': {
+                            'year': '$year', 
+                            'event_type': '$event_type', 
+                            'games': '$games'
+                        }
+                    }
+                }
+            }
+        ]
+        schedules = list(schedules_collection.aggregate(pipeline))
 
         if not schedules:
             return jsonify({"message": "No schedules found"}), 404
@@ -672,6 +686,7 @@ def retrieve_all_schedules():
 
     except Exception as e:
         return jsonify({"error": f"Failed to retrieve schedule data: {str(e)}"}), 500
+
 
 @app.route('/schedule/retrieve', methods=['GET'])
 def retrieve_schedule():
@@ -683,9 +698,9 @@ def retrieve_schedule():
         # Build the query dynamically based on provided filters.
         query = {}
         if school_name:
-            query["school_name"] = {"$regex": school_name, "$options": "i"}  # Case-insensitive
+            query["school_name"] = {"$regex": school_name, "$options": "i"}
         if event_type:
-            query["event_type"] = {"$regex": event_type, "$options": "i"}  # Now at the top level
+            query["event_type"] = {"$regex": event_type, "$options": "i"} 
 
         schedules = list(schedules_collection.find(query, {"_id": 0}))
 
@@ -700,5 +715,4 @@ def retrieve_schedule():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    app.run(debug=True)
-
+        app.run(debug=True)
