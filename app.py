@@ -681,7 +681,7 @@ def retrieve_all_schedules():
 
         if not schedules:
             return jsonify({"message": "No schedules found"}), 404
-
+    
         return jsonify({"schedules": schedules}), 200
 
     except Exception as e:
