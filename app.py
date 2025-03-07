@@ -1,6 +1,5 @@
 from flask import Flask, request, jsonify, session, redirect, url_for
 from flask_session import Session
-from models import db, User, Ticket, Listing, Transaction, APILog
 from datetime import datetime
 import re
 import os
@@ -16,9 +15,6 @@ from schedule_parser import parse_html_schedule
 
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///student_section.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db.init_app(app)
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 app.config['SESSION_COOKIE_SECURE'] = False  # if you're on HTTP in dev
 CORS(app, supports_credentials=True)
