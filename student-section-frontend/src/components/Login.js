@@ -20,9 +20,9 @@ const LoginPage = ({ setUser }) => {
   
     try {
       if (isRegister) {
-        // Basic checks
-        if (!email || !password || !firstName || !lastName || !phone || !school) {
-          setError('Please fill in all required fields.');
+        // Basic checks for the truly required fields
+        if (!email || !password || !firstName || !lastName || !phone) {
+          setError('Please fill in all required fields. (School is optional)');
           return;
         }
   
@@ -33,6 +33,7 @@ const LoginPage = ({ setUser }) => {
           FirstName: firstName,
           LastName: lastName,
           phone,
+          // If school is blank, the backend will default it to 'public'
           School: school,
         }, { withCredentials: true });
   
@@ -42,11 +43,11 @@ const LoginPage = ({ setUser }) => {
           password,
         }, { withCredentials: true });
   
-        // 3) Fetch user info from /users/me
+        // 3) Fetch user info
         const meResponse = await axios.get('http://localhost:5000/users/me', {
           withCredentials: true,
         });
-        setUser(meResponse.data);  // meResponse.data could be { email, school, etc. }
+        setUser(meResponse.data);
   
         alert('Registration successful! You are now logged in.');
   
@@ -67,7 +68,6 @@ const LoginPage = ({ setUser }) => {
           withCredentials: true,
         });
         setUser(meResponse.data);
-  
       }
     } catch (err) {
       console.error(err);
@@ -75,8 +75,6 @@ const LoginPage = ({ setUser }) => {
     }
   };
 
-
-  // Inline styles for background image
   const pageStyle = {
     backgroundImage: `url(${Background})`,
     backgroundSize: 'cover',
@@ -95,7 +93,9 @@ const LoginPage = ({ setUser }) => {
           <h3 className="mb-4">{isRegister ? 'Register' : 'Login'}</h3>
         </div>
         {error && <div className="alert alert-danger">{error}</div>}
+
         <form onSubmit={handleSubmit}>
+          {/* Email */}
           <div className="mb-3">
             <input
               type="email"
@@ -106,6 +106,8 @@ const LoginPage = ({ setUser }) => {
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
+
+          {/* Password */}
           <div className="mb-3">
             <input
               type="password"
@@ -116,6 +118,8 @@ const LoginPage = ({ setUser }) => {
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
+
+          {/* Additional Fields for Registration */}
           {isRegister && (
             <>
               <div className="mb-3">
@@ -149,17 +153,21 @@ const LoginPage = ({ setUser }) => {
                 <input
                   type="text"
                   className="form-control"
-                  placeholder="School"
+                  // Clarify that it's optional
+                  placeholder="School (optional, defaults to 'public')"
                   value={school}
                   onChange={(e) => setSchool(e.target.value)}
                 />
               </div>
             </>
           )}
+
+          {/* Submit button */}
           <button type="submit" className="btn btn-danger w-100">
             {isRegister ? 'Register' : 'Login'}
           </button>
         </form>
+
         <button className="btn btn-link mt-3 text-danger" onClick={() => setIsRegister(!isRegister)}>
           {isRegister ? 'Switch to Login' : 'Switch to Register'}
         </button>

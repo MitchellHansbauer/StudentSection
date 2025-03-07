@@ -15,7 +15,7 @@ function ScheduleCalendar() {
   // Fetch aggregated schedules on component mount.
   useEffect(() => {
     axios
-      .get("http://localhost:5000/schedule/all")
+      .get("http://localhost:5000/schedule/all", { withCredentials: true })
       .then((res) => setSchedules(res.data.schedules))
       .catch((err) => console.error("Error fetching schedules:", err));
   }, []);

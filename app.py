@@ -98,6 +98,12 @@ def create_user():
     # Add createdAt field
     data['createdAt'] = datetime.now()
 
+    # If 'School' is missing, None, or an empty string, set it to 'public'
+    school_value = data.get("School", "").strip()
+    if not school_value:  # i.e. school_value is "" or None
+        school_value = "public"
+    data["School"] = school_value
+
     # Check if user already exists
     if users_collection.find_one({"email": data["email"]}):
         return jsonify({"error": "User already exists"}), 409
@@ -667,46 +673,82 @@ def upload_schedule():
 
 @app.route('/schedule/all', methods=['GET'])
 def retrieve_all_schedules():
-    """Retrieves all schedules grouped by school."""
+    """
+    Retrieves all schedules grouped by school, returning "public" schedules for everyone,
+    and also the user's school (if logged in).
+    """
     try:
-        pipeline = [
-            {
-                '$group': {
-                    '_id': '$school_name', 
-                    'events': {
-                        '$push': {
-                            'year': '$year', 
-                            'event_type': '$event_type', 
-                            'games': '$games'
-                        }
+        # If the user is logged in, session['school'] is set
+        user_school = session.get("school")
+
+        # By default, show only 'public' schedules
+        allowed_schools = ["public"]
+
+        # If user_school is set and not 'public', include it
+        if user_school and user_school.lower() != "public":
+            allowed_schools.append(user_school)
+
+        # 1) Create a match stage that includes only these schools
+        match_stage = {
+            "$match": {
+                "school_name": {"$in": allowed_schools}
+            }
+        }
+
+        # 2) Group by school_name
+        group_stage = {
+            "$group": {
+                "_id": "$school_name",
+                "events": {
+                    "$push": {
+                        "year": "$year",
+                        "event_type": "$event_type",
+                        "games": "$games"
                     }
                 }
             }
-        ]
+        }
+
+        pipeline = [match_stage, group_stage]
         schedules = list(schedules_collection.aggregate(pipeline))
 
         if not schedules:
             return jsonify({"message": "No schedules found"}), 404
-    
+
         return jsonify({"schedules": schedules}), 200
 
     except Exception as e:
         return jsonify({"error": f"Failed to retrieve schedule data: {str(e)}"}), 500
 
-
 @app.route('/schedule/retrieve', methods=['GET'])
 def retrieve_schedule():
-    """Retrieves schedules based on filters: school name and event type."""
+    """
+    Retrieves schedules based on filters: school name and event type,
+    but always includes "public" schedules plus the user's own school if logged in.
+    """
     try:
-        school_name = request.args.get('school_name', None)
-        event_type = request.args.get('event_type', None)
+        user_school = session.get("school")
+        allowed_schools = ["public"]
+        if user_school and user_school.lower() != "public":
+            allowed_schools.append(user_school)
 
-        # Build the query dynamically based on provided filters.
-        query = {}
-        if school_name:
-            query["school_name"] = {"$regex": school_name, "$options": "i"}
+        # Build the base query to match only the allowed schools
+        query = {"school_name": {"$in": allowed_schools}}
+
+        # If user supplies a 'school_name' query param, refine the match
+        # (still must also be in allowed_schools)
+        school_name_param = request.args.get('school_name')
+        if school_name_param:
+            # combine $in with regex:
+            query["school_name"] = {
+                "$in": allowed_schools,
+                "$regex": school_name_param,
+                "$options": "i"
+            }
+
+        event_type = request.args.get('event_type')
         if event_type:
-            query["event_type"] = {"$regex": event_type, "$options": "i"} 
+            query["event_type"] = {"$regex": event_type, "$options": "i"}
 
         schedules = list(schedules_collection.find(query, {"_id": 0}))
 
