@@ -1,34 +1,23 @@
 import React from 'react';
+import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import Logo from '../media/StudentSectionTransparent.png';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-const Navbar = ({ handleLogout }) => {
+const Navbar = ({ user, setUser }) => {
   const navigate = useNavigate();
 
   const onLogoutClick = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:5000/logout", {
-        method: "POST",
-        credentials: "include", // Ensure cookies are sent with the request
-        headers: { "Content-Type": "application/json" },
+      await axios.post("http://localhost:5000/logout", {}, {
+        withCredentials: true,
       });
-  
-      if (response.ok) {
-        // Clear local storage
-        localStorage.removeItem("user");
-  
-        // Force reload to clear stored session cookies
-        window.location.href = "/login";
-      } else {
-        alert("Logout failed!");
-      }
-    } catch (error) {
-      console.error("Error logging out:", error);
+      setUser(null);
+    } catch (err) {
+      console.error("Error logging out:", err);
     }
   };
   
-
   return (
     <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
       <div className="container-fluid">

@@ -1,88 +1,97 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
 function ProfilePage() {
+  const [userId, setUserId] = useState(null);
   const [profile, setProfile] = useState({
     phone: '',
     School: '',
     FirstName: '',
     LastName: '',
-    // add other fields as needed
   });
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
-  // On mount, fetch the user’s profile
+  // 1) On mount, get the user from /users/me
   useEffect(() => {
-    // Assume you stored user info in localStorage under key 'user'
-    const storedUser = localStorage.getItem('user');
-    if (!storedUser) {
-      setError('No user data found; please log in.');
-      return;
-    }
-    const userObj = JSON.parse(storedUser);
-
-    // Fetch the user profile via your Flask endpoint
     axios
-      .get(`http://localhost:5000/users/${userObj._id}/profile`)
+      .get('http://localhost:5000/users/me', {
+        withCredentials: true, // important for cookie
+      })
+      .then((res) => {
+        // Suppose /users/me returns something like { user_id: "...", email: "..." }
+        const me = res.data;
+        if (!me || !me.email) {
+          // Not logged in
+          setError('No session found. Please log in.');
+          return;
+        }
+        // 2) We have a user ID from the session
+        setUserId(me.user_id);
+      })
+      .catch((err) => {
+        console.error(err);
+        setError('No session found. Please log in.');
+      });
+  }, []);
+
+  // 3) Once we have userId, fetch their profile
+  useEffect(() => {
+    if (!userId) return; // Wait for userId to be set
+    axios
+      .get(`http://localhost:5000/users/${userId}/profile`, {
+        withCredentials: true, // send session cookie
+      })
       .then((res) => {
         setProfile((prev) => ({
           ...prev,
-          ...res.data.profile
+          ...res.data.profile, // merges the fields into our local state
         }));
       })
       .catch((err) => {
         console.error(err);
-        setError(
-          err.response?.data?.error || 'Error loading profile information.'
-        );
+        setError(err.response?.data?.error || 'Error loading profile.');
       });
-  }, []);
+  }, [userId]);
 
-  // Handler for form field changes
+  // Handler for changes
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setProfile((prev) => ({
-      ...prev,
-      [name]: value
-    }));
+    setProfile((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handler for saving/updating profile
+  // 4) PUT to update profile
   const handleSave = (e) => {
     e.preventDefault();
     setMessage('');
     setError('');
 
-    const storedUser = localStorage.getItem('user');
-    if (!storedUser) {
-      setError('No user data found; please log in.');
+    if (!userId) {
+      setError('No session found. Please log in.');
       return;
     }
-    const userObj = JSON.parse(storedUser);
 
     axios
-      .put(`http://localhost:5000/users/${userObj._id}/profile`, {
+      .put(`http://localhost:5000/users/${userId}/profile`, {
         phone: profile.phone,
         School: profile.School,
         FirstName: profile.FirstName,
-        LastName: profile.LastName
+        LastName: profile.LastName,
+      }, {
+        withCredentials: true, // again, include cookies
       })
       .then((res) => {
         setMessage(res.data.message || 'Profile updated successfully!');
       })
       .catch((err) => {
         console.error(err);
-        setError(
-          err.response?.data?.error || 'Error updating profile.'
-        );
+        setError(err.response?.data?.error || 'Error updating profile.');
       });
   };
 
   return (
     <div style={{ maxWidth: '500px', margin: '40px auto' }}>
       <h2>My Profile</h2>
-
       {message && <p style={{ color: 'green' }}>{message}</p>}
       {error && <p style={{ color: 'red' }}>{error}</p>}
 

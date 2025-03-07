@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import LoginPage from './components/Login';
+import axios from 'axios';
 import TicketsList from './components/TicketsList';
 import ProfilePage from './components/ProfilePage';
 import Marketplace from './components/Marketplace';
@@ -12,21 +13,23 @@ import ScheduleCalendar from "./components/ScheduleCalendar";
 function App() {
   const [user, setUser] = useState(null);
 
-  // Load user info from localStorage on mount
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
+    axios.get('http://localhost:5000/users/me', { withCredentials: true })
+      .then((res) => {
+        setUser(res.data.user); // If 200, we have a user
+      })
+      .catch((err) => {
+        // If 401, no session
+        console.error(err);
+        setUser(null);
+      });
   }, []);
-
-
 
   return (
     <Router>
       <div>
         {/* Show navbar only if user is logged in */}
-        {user && <Navbar />}
+        {user && <Navbar user={user} setUser={setUser} />}
 
         <Routes>
           {user ? (

@@ -19,7 +19,9 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///student_section.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
-CORS(app, supports_credentials=True)  # Enable CORS
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+app.config['SESSION_COOKIE_SECURE'] = False  # if you're on HTTP in dev
+CORS(app, supports_credentials=True)
 
 #Redis Integration - Secret Key
 app.secret_key = os.getenv('SECRET_KEY', default='BAD_SECRET_KEY')
@@ -107,7 +109,6 @@ def create_user():
         "user_id": str(result.inserted_id)
     }), 201
 
-
 @app.route('/users/login', methods=['POST', 'GET'])
 def login():
     data = request.get_json()
@@ -123,52 +124,57 @@ def login():
     # Look up the user by email and password (iIMPLEMENT COMPARING HASHED PASSWORDS)
     user = users_collection.find_one({"email": email, "password": password})
     
-    if user:
-        user["_id"] = str(user["_id"])
-        user.pop("password", None)
-
-        #Session Information
-        index = email.index("@")
-        username = email[:index]
-        #One user per session
-        sessioncall=r.scan(cursor=0, match=username+'*')
-        sessionbool=str(username) in str(sessioncall)
-        if (sessionbool):
-            sessionid=sessioncall[1][0]
-        else:
-            sessionid=username+"-"+generate_session_id()
-            r.hset(sessionid, mapping={
-            'email': email,
-            'school': user.get("School")
-            })
-            r.expire(sessionid, 21600)
-            
-        return jsonify({"message": "Login successful", "user": user}), 200
-    else:
+    if not user:
         return jsonify({"error": "Invalid email or password"}), 401
+
+    # Once authenticated:
+    session['user_id'] = str(user["_id"])
+    session['email']   = user["email"]
+    session['school']  = user.get("School")
+
+    return jsonify({"message": "Login successful"}), 200
 
 @app.route('/logout', methods=['POST'])
 def logout():
-    session.clear()  # Clear session
-    session.modified = True  # Ensure session is updated
-    response = jsonify({"message": "Logged out successfully"})
-    response.set_cookie('session', '', expires=0)  # Expire session cookie
-    r.delete(sessionid)
-    return response, 200
+    session.clear()
+    return jsonify({"message": "Logged out successfully"}), 200
+
+@app.route('/users/me', methods=['GET'])
+def get_current_user():
+    if 'user_id' not in session:
+        return jsonify({"error": "Not logged in"}), 401
+    
+    return jsonify({
+        "user_id": session.get("user_id"),
+        "email": session.get("email"),
+        "school": session.get("school")
+    }), 200
 
 @app.route('/users/<string:user_id>/profile', methods=['GET'])
 def get_profile(user_id):
     """
-    Return the user's profile info from MongoDB (including school_name if present).
+    Return the user's profile from MongoDB, 
+    verifying that the user_id in the URL matches the session user.
     """
-    user = users_collection.find_one({"_id": ObjectId(user_id)})
-    if not user:
+
+    # 1) Check if user_id is in the Flask session:
+    if 'user_id' not in session:
+        return jsonify({"error": "No session found"}), 401
+
+    session_user_id = session['user_id']
+    if session_user_id != user_id:
+        return jsonify({"error": "Unauthorized - cannot view another user's profile"}), 403
+
+    # 2) Lookup user by session_user_id in MongoDB
+    user_doc = users_collection.find_one({"_id": ObjectId(session_user_id)})
+    if not user_doc:
         return jsonify({"error": "User not found"}), 404
-    
-    # Hide sensitive info as needed
-    user['_id'] = str(user['_id'])
-    user.pop('password', None)
-    return jsonify({"profile": user}), 200
+
+    # 3) Clean up sensitive fields
+    user_doc['_id'] = str(user_doc['_id'])
+    user_doc.pop('password', None)
+
+    return jsonify({"profile": user_doc}), 200
 
 
 @app.route('/users/<string:user_id>/profile', methods=['PUT'])

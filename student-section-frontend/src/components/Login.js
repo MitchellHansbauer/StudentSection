@@ -17,14 +17,16 @@ const LoginPage = ({ setUser }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-
-    if (isRegister) {
-      if (!email || !password) {
-        setError('Please fill in all required fields.');
-        return;
-      }
-      try {
-        // 1. Register the user
+  
+    try {
+      if (isRegister) {
+        // Basic checks
+        if (!email || !password || !firstName || !lastName || !phone || !school) {
+          setError('Please fill in all required fields.');
+          return;
+        }
+  
+        // 1) Register user
         await axios.post('http://localhost:5000/users/register', {
           email,
           password,
@@ -32,36 +34,47 @@ const LoginPage = ({ setUser }) => {
           LastName: lastName,
           phone,
           School: school,
-        });
-
-        // 2. Immediately log them in using the same credentials
-        const loginResponse = await axios.post('http://localhost:5000/users/login', {
+        }, { withCredentials: true });
+  
+        // 2) Immediately log in
+        await axios.post('http://localhost:5000/users/login', {
           email,
           password,
+        }, { withCredentials: true });
+  
+        // 3) Fetch user info from /users/me
+        const meResponse = await axios.get('http://localhost:5000/users/me', {
+          withCredentials: true,
         });
-
-        // 3. Store user in localStorage + setUser state
-        localStorage.setItem('user', JSON.stringify(loginResponse.data.user));
-        setUser(loginResponse.data.user);
-
+        setUser(meResponse.data);  // meResponse.data could be { email, school, etc. }
+  
         alert('Registration successful! You are now logged in.');
-      } catch (err) {
-        setError(err.response?.data?.error || 'Registration failed.');
+  
+      } else {
+        // Logging in an existing user
+        if (!email || !password) {
+          setError('Please enter both email and password.');
+          return;
+        }
+  
+        // 1) Log in
+        await axios.post('http://localhost:5000/users/login', { email, password }, {
+          withCredentials: true,
+        });
+  
+        // 2) Fetch user info
+        const meResponse = await axios.get('http://localhost:5000/users/me', {
+          withCredentials: true,
+        });
+        setUser(meResponse.data);
+  
       }
-    } else {
-      if (!email || !password) {
-        setError('Please enter both email and password.');
-        return;
-      }
-      try {
-        const res = await axios.post('http://localhost:5000/users/login', { email, password });
-        localStorage.setItem('user', JSON.stringify(res.data.user));
-        setUser(res.data.user);
-      } catch (err) {
-        setError(err.response?.data?.error || 'Login failed.');
-      }
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.error || 'Something went wrong.');
     }
   };
+
 
   // Inline styles for background image
   const pageStyle = {
