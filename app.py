@@ -6,13 +6,13 @@ import os
 import uuid
 import requests
 import redis
+import stripe
 from flask_cors import CORS
 from pymongo import MongoClient
 from pymongo import UpdateOne
 from bson import ObjectId
 from datetime import timedelta
 from schedule_parser import parse_html_schedule
-
 
 app = Flask(__name__)
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
@@ -36,6 +36,9 @@ def generate_session_id():
 # Create and initialize the Flask-Session object AFTER `app` has been configured
 server_session = Session(app)
 
+# Stripe Integration
+os.environ["STRIPE_SECRET_KEY"] = "pk_test_51QonQAJa1VtbThKgAwsAb8RRx5Pi9tIv2C2bpCKk26eJjYdk912HoJDSZshm2iAlVN3G6Gr8hptknMINp27sob2E00BTXIUauL"
+stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 
 # MongoDB connection
 client = MongoClient('mongodb+srv://dbadmin:Time2add@studentsectiondemo.9mdru.mongodb.net/?retryWrites=true&w=majority&appName=StudentSectionDemo')
