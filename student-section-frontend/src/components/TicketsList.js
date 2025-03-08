@@ -1,91 +1,56 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
-function TicketsList() {
+function TicketsList({ location }) {
   const [tickets, setTickets] = useState([]);
   const [message, setMessage] = useState('');
 
-  const userId = 1; // Replace with actual user ID
-  const seasonCode = 'FB17'; // Replace with actual season code
+  // Check if event filtering info was passed via navigation state
+  const eventFilter = location?.state || {};
 
   useEffect(() => {
-    // Fetch tickets from the backend
-    axios.post('http://localhost:5000/tickets/list', {
-      user_id: userId,
-      season_code: seasonCode,
-    })
-    .then(() => {
-      // Then, fetch the tickets from the database
-      axios.get(`http://localhost:5000/users/${userId}/tickets`)
-        .then(res => setTickets(res.data.tickets))
-        .catch(err => console.error(err));
-    })
-    .catch(error => {
-      console.error('Error fetching tickets:', error);
-    });
+    fetchTickets();
   }, []);
 
-  const handleListTicket = (ticketId) => {
-    const price = prompt('Enter the price for the ticket:');
-    if (price) {
-      axios.post('http://localhost:5000/listings/create', {
-        ticket_id: ticketId,
-        seller_id: userId,
-        price: parseFloat(price),
-      })
+  const fetchTickets = () => {
+    axios.get('http://localhost:5000/tickets', { withCredentials: true })
       .then(res => {
-        setMessage(res.data.message);
-        // Update ticket list to reflect the listed ticket
-        setTickets(tickets.map(ticket => {
-          if (ticket.ticket_id === ticketId) {
-            return { ...ticket, is_listed: true };
-          }
-          return ticket;
-        }));
+        let fetched = res.data.tickets;
+        // Filter tickets if event_filter is provided (by event_name and/or event_date)
+        if (eventFilter.event_name) {
+          fetched = fetched.filter(ticket => ticket.event_name === eventFilter.event_name);
+        }
+        setTickets(fetched);
       })
-      .catch(error => {
-        setMessage(error.response.data.error);
-        console.error(error);
-      });
-    }
+      .catch(err => console.error(err));
   };
 
-  const handleUnlistTicket = (ticketId) => {
-    axios.delete('http://localhost:5000/listings/delete', {
-      data: { ticket_id: ticketId, user_id: userId }
-    })
-    .then(res => {
-      setMessage(res.data.message);
-      // Update ticket list to reflect the unlisted ticket
-      setTickets(tickets.map(ticket => {
-        if (ticket.ticket_id === ticketId) {
-          return { ...ticket, is_listed: false };
-        }
-        return ticket;
-      }));
-    })
-    .catch(error => {
-      setMessage(error.response.data.error);
-      console.error(error);
-    });
+  const purchaseTicket = (ticketId) => {
+    axios.post(`http://localhost:5000/tickets/${ticketId}/purchase`, {}, { withCredentials: true })
+      .then(res => {
+        setMessage(res.data.message);
+        fetchTickets();
+      })
+      .catch(err => {
+        console.error(err);
+        setMessage(err.response?.data?.error || 'Purchase failed');
+      });
   };
 
   return (
-    <div>
-      <h2>My Tickets</h2>
+    <div className="container">
+      <h2>Available Tickets {eventFilter.event_name && `for ${eventFilter.event_name}`}</h2>
       {message && <p>{message}</p>}
       {tickets.length === 0 ? (
         <p>No tickets available.</p>
       ) : (
-        <table>
+        <table className="table table-striped">
           <thead>
             <tr>
               <th>Event</th>
-              <th>Section</th>
-              <th>Row</th>
-              <th>Seat</th>
+              <th>Date</th>
+              <th>Venue</th>
               <th>Price</th>
-              <th>Listed</th>
               <th>Action</th>
             </tr>
           </thead>
@@ -93,22 +58,13 @@ function TicketsList() {
             {tickets.map(ticket => (
               <tr key={ticket.ticket_id}>
                 <td>{ticket.event_name}</td>
-                <td>{ticket.section}</td>
-                <td>{ticket.row}</td>
-                <td>{ticket.seat_number}</td>
-                <td>${ticket.price.toFixed(2)}</td>
-                <td>{ticket.is_listed ? 'Yes' : 'No'}</td>
+                <td>{new Date(ticket.event_date).toLocaleDateString()}</td>
+                <td>{ticket.venue}</td>
+                <td>{ticket.price} {ticket.currency}</td>
                 <td>
-                  {!ticket.is_listed && (
-                    <button onClick={() => handleListTicket(ticket.ticket_id)}>
-                      List for Sale
-                    </button>
-                  )}
-                  {ticket.is_listed && (
-                    <button onClick={() => handleUnlistTicket(ticket.ticket_id)}>
-                      Refund Ticket
-                    </button>
-                  )}
+                  <button onClick={() => purchaseTicket(ticket.ticket_id)} className="btn btn-primary">
+                    Purchase
+                  </button>
                 </td>
               </tr>
             ))}

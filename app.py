@@ -45,6 +45,7 @@ client = MongoClient('mongodb+srv://dbadmin:Time2add@studentsectiondemo.9mdru.mo
 ssdb = client['student_section']
 schedules_collection = ssdb['schedules']
 users_collection = ssdb['users']
+tickets_collection = ssdb['tickets']
 apilogs_collection = ssdb['apilogs']
 
 MOCK_API_BASE_URL = "http://localhost:3003"
@@ -84,11 +85,16 @@ def get_mock_token():
         return response.json().get("accessToken")
     return None
 
+# ------------------------------
+# Endpoint: POST /users/register
+# Create a new user in MongoDB with email, password, and optional school name.
+# If 'School' is missing, None, or an empty string, set it to 'public'.
+# Check if the user already exists before creating a new user.
+# ------------------------------
 @app.route('/users/register', methods=['POST'])
 def create_user():
     data = request.get_json()
     
-    # Minimal required fields
     required_fields = ["email", "password"]
     for field in required_fields:
         if field not in data:
@@ -97,13 +103,11 @@ def create_user():
     # Add createdAt field
     data['createdAt'] = datetime.now()
 
-    # If 'School' is missing, None, or an empty string, set it to 'public'
     school_value = data.get("School", "").strip()
     if not school_value:  # i.e. school_value is "" or None
         school_value = "public"
     data["School"] = school_value
 
-    # Check if user already exists
     if users_collection.find_one({"email": data["email"]}):
         return jsonify({"error": "User already exists"}), 409
 
@@ -114,6 +118,12 @@ def create_user():
         "user_id": str(result.inserted_id)
     }), 201
 
+
+# ------------------------------
+# Endpoint: POST, GET /users/login
+# Log in a user by email and password, or get the current user's session data.
+# once authenticated, store the user's ID in the Flask session.
+# ------------------------------
 @app.route('/users/login', methods=['POST', 'GET'])
 def login():
     data = request.get_json()
@@ -139,11 +149,21 @@ def login():
 
     return jsonify({"message": "Login successful"}), 200
 
+
+# ------------------------------
+# Endpoint: POST /logout
+# Clear the session data to log out the user.
+# ------------------------------
 @app.route('/logout', methods=['POST'])
 def logout():
     session.clear()
     return jsonify({"message": "Logged out successfully"}), 200
 
+
+# ------------------------------
+# Endpoint: GET /users/me
+# Get the current user's session data, if logged in.
+# ------------------------------
 @app.route('/users/me', methods=['GET'])
 def get_current_user():
     if 'user_id' not in session:
@@ -155,13 +175,14 @@ def get_current_user():
         "school": session.get("school")
     }), 200
 
+
+# ------------------------------
+# Endpoint: GET /users/<string:user_id>/profile
+# Return the user's profile from MongoDB, 
+# verifying that the user_id in the URL matches the session user.
+# ------------------------------
 @app.route('/users/<string:user_id>/profile', methods=['GET'])
 def get_profile(user_id):
-    """
-    Return the user's profile from MongoDB, 
-    verifying that the user_id in the URL matches the session user.
-    """
-
     # 1) Check if user_id is in the Flask session:
     if 'user_id' not in session:
         return jsonify({"error": "No session found"}), 401
@@ -182,11 +203,12 @@ def get_profile(user_id):
     return jsonify({"profile": user_doc}), 200
 
 
+# ------------------------------
+# Endpoint: PUT /users/<string:user_id>/profile
+# Update user fields in their MongoDB profile, e.g. phone, school_name, etc.
+# ------------------------------
 @app.route('/users/<string:user_id>/profile', methods=['PUT'])
 def update_profile(user_id):
-    """
-    Update user fields in their MongoDB profile, e.g. phone, school_name, etc.
-    """
     data = request.get_json()
     # Accept any fields that are safe to update. For example:
     updatable_fields = {"phone", "School", "FirstName", "LastName"}  # etc.
@@ -208,294 +230,175 @@ def update_profile(user_id):
         return jsonify({"message": "Profile updated successfully"}), 200
     else:
         return jsonify({"error": "No changes or user not found"}), 400
-# # Endpoint to retrieve and store tickets for a user
-# @app.route('/tickets/list', methods=['POST'])
-# def list_tickets():
-#     print("list_tickets endpoint was called")
-#     user_id = request.json.get("user_id")
-#     season_code = request.json.get("season_code")
 
-#     user = User.query.get(user_id)
-#     if not user:
-#         return jsonify({"error": "User not found"}), 404
 
-#     # Authenticate with the mock API to get the token
-#     token = get_mock_token()
-#     if not token:
-#         return jsonify({"error": "Unable to authenticate with mock Paciolan API"}), 500
+# ------------------------------
+# Endpoint: POST /tickets
+# Create a ticket listing using schedule event details.
+# ------------------------------
+@app.route('/tickets', methods=['POST'])
+def post_ticket():
+    if 'user_id' not in session:
+        return jsonify({"error": "Not authenticated"}), 401
 
-#     # Get tickets for the user from the mock API
-#     url = f"{MOCK_API_BASE_URL}/v2/patron/{user.paciolan_account_id}/orders/{season_code}"
-#     headers = {
-#         "Authorization": "MockAccessToken12345",
-#         "PAC-Application-ID": "application.id",
-#         "PAC-API-Key": "mock.api.key",
-#         "PAC-Channel-Code": "mock.channel.code",
-#         "PAC-Organization-ID": "OrganizationID",
-#         "User-Agent": "StudentSection/v1.0",
-#         "Accept": "application/json"
-#     }
-#     response = requests.get(url, headers=headers)
-#     status = 'Success' if response.status_code == 200 else 'Error'
-#     log_api_interaction(f'GET {url}', response.status_code, status)
+    data = request.get_json()
 
-#     if response.status_code != 200:
-#         return jsonify({"error": "Failed to retrieve tickets"}), response.status_code
+    # Ensure required fields are provided from the schedule event and user input.
+    required_fields = ['event_name', 'event_date', 'venue', 'price']
+    for field in required_fields:
+        if field not in data:
+            return jsonify({"error": f"Missing field: {field}"}), 400
 
-#     response_data = response.json()
-#     tickets_data = response_data.get("orderLineItems", [])
+    try:
+        # Expect event_date as ISO string (e.g., "2025-04-08T08:00:00")
+        event_date = datetime.fromisoformat(data['event_date'])
+    except Exception as e:
+        return jsonify({"error": "Invalid event_date format"}), 400
 
-#     for ticket_data in tickets_data:
-#         event_item = ticket_data.get("item", {})
-#         event_code = event_item.get("code", "Unknown Event")
-#         event_name = event_item.get("name", "Unknown Event Name")
-#         season = response_data.get("season", {})
-#         season_code = season.get("code", "Unknown Season")
+    # For school_name, if the schedule event is public we use "public" or the user's school if set.
+    school_name = "public"
+    if session.get("school"):
+        school_name = session["school"]
 
-#         events = ticket_data.get("events", [])
-#         for event in events:
-#             is_transferrable = event.get("isTransferrable", False)
-#             price = event.get("price", 0.0)
-#             seats = event.get("seats", [])
-#             for seat in seats:
-#                 section = seat.get("section", "Unknown Section")
-#                 row = seat.get("row", "Unknown Row")
-#                 seat_number = seat.get("seat", "Unknown Seat")
-#                 barcode = seat.get("barcode")
+    ticket_doc = {
+        "seller_id": ObjectId(session['user_id']),
+        "school_name": school_name,
+        "event_name": data.get("event_name", ""),
+        "event_date": event_date,
+        "venue": data.get("venue", ""),
+        "price": data['price'],
+        "currency": data.get("currency", "USD"),
+        "status": "available",
+        "is_transferrable": True,
+        "created_at": datetime.utcnow()
+    }
 
-#                 # Check if the ticket already exists to avoid duplicates
-#                 existing_ticket = Ticket.query.filter_by(
-#                     event_code=event_code,
-#                     section=section,
-#                     row=row,
-#                     seat_number=seat_number,
-#                     owner_id=user_id
-#                 ).first()
+    result = tickets_collection.insert_one(ticket_doc)
+    return jsonify({
+        "message": "Ticket listed successfully",
+        "ticket_id": str(result.inserted_id)
+    }), 201
 
-#                 if not existing_ticket:
-#                     new_ticket = Ticket(
-#                         event_code=event_code,
-#                         event_name=event_name,
-#                         season_code=season_code,
-#                         section=section,
-#                         row=row,
-#                         seat_number=seat_number,
-#                         barcode=barcode,
-#                         price=price,
-#                         is_transferrable=is_transferrable,
-#                         owner_id=user_id
-#                     )
-#                     db.session.add(new_ticket)
 
-#     db.session.commit()
-#     return jsonify({"message": "Tickets listed successfully"}), 201
+# ------------------------------
+# Endpoint: GET /tickets
+# List all available ticket listings (public endpoint)
+# ------------------------------
+@app.route('/tickets', methods=['GET'])
+def list_tickets():
+    tickets_cursor = tickets_collection.find({"status": "available"})
+    tickets = []
+    for t in tickets_cursor:
+        ticket = {
+            "ticket_id": str(t["_id"]),
+            "seller_id": str(t["seller_id"]),
+            "school_name": t.get("school_name", ""),
+            "event_code": t.get("event_code", ""),
+            "event_name": t.get("event_name", ""),
+            "event_date": t["event_date"].isoformat() if "event_date" in t else "",
+            "venue": t.get("venue", ""),
+            "section": t.get("section", ""),
+            "row": t.get("row", ""),
+            "seat": t.get("seat", ""),
+            "level": t.get("level", ""),
+            "price": t.get("price", 0),
+            "currency": t.get("currency", "USD")
+        }
+        tickets.append(ticket)
+    return jsonify({"tickets": tickets}), 200
 
-# # Endpoint to get tickets for a user
-# @app.route('/users/<int:user_id>/tickets', methods=['GET'])
-# def get_user_tickets(user_id):
-#     user = User.query.get(user_id)
-#     if not user:
-#         return jsonify({"error": "User not found"}), 404
 
-#     tickets = Ticket.query.filter_by(owner_id=user_id).all()
-#     tickets_list = []
-#     for ticket in tickets:
-#         tickets_list.append({
-#             "ticket_id": ticket.ticket_id,
-#             "event_name": ticket.event_name,
-#             "section": ticket.section,
-#             "row": ticket.row,
-#             "seat_number": ticket.seat_number,
-#             "price": ticket.price,
-#             "is_listed": ticket.is_listed
-#         })
-#     return jsonify({"tickets": tickets_list}), 200
+# ------------------------------
+# Endpoint: POST /tickets/<ticket_id>/purchase
+# Purchase a ticket – places a Stripe hold and (via placeholder) transfers the ticket.
+# ------------------------------
+@app.route('/tickets/<ticket_id>/purchase', methods=['POST'])
+def purchase_ticket(ticket_id):
+    if 'user_id' not in session:
+        return jsonify({"error": "Not authenticated"}), 401
 
-# # Endpoint to get user by email
-# @app.route('/users/email/<string:email>', methods=['GET'])
-# def get_user_by_email(email):
-#     user = User.query.filter_by(email=email).first()
-#     if not user:
-#         return jsonify({"error": "User not found"}), 404
+    buyer_id = session['user_id']
+    ticket = tickets_collection.find_one({"_id": ObjectId(ticket_id)})
+    if not ticket:
+        return jsonify({"error": "Ticket not found"}), 404
+    if ticket.get("status") != "available":
+        return jsonify({"error": "Ticket is not available"}), 400
+    if str(ticket.get("seller_id")) == buyer_id:
+        return jsonify({"error": "Cannot purchase your own ticket"}), 400
 
-#     return jsonify({
-#         "user_id": user.user_id,
-#         "first_name": user.first_name,
-#         "last_name": user.last_name
-#     }), 200
+    try:
+        # Convert ticket price to cents (Stripe uses the smallest currency unit)
+        amount = int(float(ticket["price"]) * 100)
+        payment_intent = stripe.PaymentIntent.create(
+            amount=amount,
+            currency=ticket.get("currency", "usd"),
+            capture_method="manual",  # Use manual capture for hold mechanism
+            metadata={
+                "ticket_id": ticket_id,
+                "seller_id": str(ticket.get("seller_id")),
+                "buyer_id": buyer_id
+            }
+        )
+    except Exception as e:
+        return jsonify({"error": "Stripe PaymentIntent creation failed", "details": str(e)}), 500
 
-# # Endpoint to create a ticket listing
-# @app.route('/listings/create', methods=['POST'])
-# def create_listing():
-#     ticket_id = request.json.get('ticket_id')
-#     seller_id = request.json.get('seller_id')
-#     price = request.json.get('price')
+    # Mark the ticket as pending to prevent double-sale and record the buyer and payment intent
+    update_result = tickets_collection.update_one(
+        {"_id": ObjectId(ticket_id), "status": "available"},
+        {"$set": {
+            "status": "pending",
+            "buyer_id": ObjectId(buyer_id),
+            "payment_intent_id": payment_intent.id
+        }}
+    )
+    if update_result.modified_count != 1:
+        return jsonify({"error": "Ticket purchase could not be initiated; ticket may have been updated"}), 409
 
-#     # Retrieve the ticket and seller
-#     ticket = Ticket.query.get(ticket_id)
-#     if not ticket:
-#         return jsonify({'error': 'Ticket not found'}), 404
+    # Placeholder: simulate ticket transfer via Paciolan
+    def transfer_ticket_placeholder(ticket):
+        # Future integration: call the Paciolan API to transfer the ticket
+        # For now, assume success and return dummy values.
+        return True, "dummy_transfer_id", "dummy_transfer_url"
 
-#     if ticket.owner_id != seller_id:
-#         return jsonify({'error': 'You do not own this ticket'}), 403
+    success, transfer_id, transfer_url = transfer_ticket_placeholder(ticket)
+    if not success:
+        stripe.PaymentIntent.cancel(payment_intent.id)
+        tickets_collection.update_one(
+            {"_id": ObjectId(ticket_id)},
+            {"$set": {"status": "available"}, "$unset": {"buyer_id": "", "payment_intent_id": ""}}
+        )
+        return jsonify({"error": "Ticket transfer failed via Paciolan"}), 500
 
-#     if ticket.is_listed:
-#         return jsonify({'error': 'Ticket is already listed'}), 400
+    # Capture the payment (finalize the hold)
+    try:
+        stripe.PaymentIntent.capture(payment_intent.id)
+    except Exception as e:
+        stripe.PaymentIntent.cancel(payment_intent.id)
+        tickets_collection.update_one(
+            {"_id": ObjectId(ticket_id)},
+            {"$set": {"status": "available"}, "$unset": {"buyer_id": "", "payment_intent_id": ""}}
+        )
+        return jsonify({"error": "Failed to capture payment", "details": str(e)}), 500
 
-#     # Create the listing
-#     new_listing = Listing(
-#         ticket_id=ticket_id,
-#         seller_id=seller_id,
-#         price=price,
-#         status='Available'
-#     )
-#     ticket.is_listed = True  # Update ticket status
-#     db.session.add(new_listing)
-#     db.session.commit()
+    # Update ticket as sold and save transfer info
+    tickets_collection.update_one(
+        {"_id": ObjectId(ticket_id)},
+        {"$set": {
+            "status": "sold",
+            "transfer_id": transfer_id,
+            "transfer_url": transfer_url
+        }}
+    )
+    return jsonify({"message": "Purchase successful, ticket transferred", "ticket_id": ticket_id}), 200
 
-#     return jsonify({'message': 'Ticket listed for sale successfully', 'listing_id': new_listing.listing_id}), 201
 
-# # Endpoint to get all available listings
-# @app.route('/listings', methods=['GET'])
-# def get_listings():
-#     listings = Listing.query.filter_by(status='Available').all()
-#     listings_data = []
-
-#     for listing in listings:
-#         ticket = Ticket.query.get(listing.ticket_id)
-#         seller = User.query.get(listing.seller_id)
-#         listings_data.append({
-#             'listing_id': listing.listing_id,
-#             'ticket_id': ticket.ticket_id,
-#             'event_name': ticket.event_name,
-#             'section': ticket.section,
-#             'row': ticket.row,
-#             'seat_number': ticket.seat_number,
-#             'price': listing.price,
-#             'seller_name': f"{seller.first_name} {seller.last_name}"
-#         })
-
-#     return jsonify({'listings': listings_data}), 200
-
-# # Endpoint to purchase a ticket
-# @app.route('/transactions/purchase', methods=['POST'])
-# def purchase_ticket():
-#     listing_id = request.json.get('listing_id')
-#     buyer_id = request.json.get('buyer_id')
-
-#     # Retrieve listing, ticket, seller, and buyer
-#     listing = Listing.query.get(listing_id)
-#     if not listing or listing.status != 'Available':
-#         return jsonify({'error': 'Listing not available'}), 404
-
-#     ticket = Ticket.query.get(listing.ticket_id)
-#     seller = User.query.get(listing.seller_id)
-#     buyer = User.query.get(buyer_id)
-#     if not buyer:
-#         return jsonify({'error': 'Buyer not found'}), 404
-
-#     resale_price = listing.price
-
-#     # Authenticate with the mock API to get the token
-#     token = get_mock_token()
-#     if not token:
-#         return jsonify({"error": "Unable to authenticate with mock Paciolan API"}), 500
-
-#     # Simulate transfer initiation with mock API
-#     url = f"{MOCK_API_BASE_URL}/v1/tickets/transfer"
-#     headers = {
-#         "Authorization": "MockAccessToken12345",
-#         "PAC-Application-ID": "application.id",
-#         "PAC-API-Key": "mock.api.key",
-#         "PAC-Channel-Code": "mock.channel.code",
-#         "PAC-Organization-ID": "OrganizationID",
-#         "User-Agent": "StudentSection/v1.0",
-#         "Accept": "application/json",
-#         "Content-Type": "application/json"
-#     }
-#     data = {
-#         "fromPatronId": seller.paciolan_account_id,
-#         "toPatronId": buyer.paciolan_account_id,
-#         "ticketIds": [ticket.barcode],
-#         "recipientEmail": buyer.email
-#     }
-#     response = requests.post(url, headers=headers, json=data)
-#     status = 'Success' if response.status_code == 200 else 'Error'
-#     log_api_interaction(f'POST {url}', response.status_code, status)
-
-#     if response.status_code == 200:
-#         transfer_data = response.json()
-#         new_transaction = Transaction(
-#             ticket_id=ticket.ticket_id,
-#             seller_id=seller.user_id,
-#             buyer_id=buyer.user_id,
-#             resale_price=resale_price,
-#             transaction_amount=resale_price,
-#             recipient_email=buyer.email,
-#             transfer_id_api=transfer_data.get("transferId"),
-#             transfer_url=transfer_data.get("url"),
-#             transaction_status="Completed",
-#             transfer_status="Accepted"
-#         )
-#         db.session.add(new_transaction)
-
-#         # Update ticket ownership and listing status
-#         ticket.owner_id = buyer.user_id
-#         ticket.is_listed = False
-#         listing.status = 'Sold'
-#         db.session.commit()
-
-#         return jsonify({
-#             "message": "Purchase successful, transfer completed",
-#             "transaction_id": new_transaction.transaction_id
-#         }), 201
-#     else:
-#         return jsonify({"error": "Failed to initiate transfer", "details": response.text}), response.status_code
-
-# # Endpoint to get user information
-# @app.route('/users/<int:user_id>', methods=['GET'])
-# def get_user(user_id):
-#     user = User.query.get(user_id)
-#     if not user:
-#         return jsonify({"error": "User not found"}), 404
-
-#     return jsonify({
-#         "user_id": user.user_id,
-#         "first_name": user.first_name,
-#         "last_name": user.last_name,
-#         "email": user.email,
-#         "paciolan_account_id": user.paciolan_account_id
-#     }), 200
-
-# @app.route('/listings/delete', methods=['DELETE'])
-# def delete_listing():
-#     ticket_id = request.json.get('ticket_id')
-#     user_id = request.json.get('user_id')  # Ensure the user owns the ticket
-
-#     # Retrieve the listing and ticket
-#     listing = Listing.query.filter_by(ticket_id=ticket_id).first()
-#     ticket = Ticket.query.get(ticket_id)
-
-#     if not ticket or not listing:
-#         return jsonify({'error': 'Listing or ticket not found'}), 404
-
-#     if ticket.owner_id != user_id:
-#         return jsonify({'error': 'Unauthorized action'}), 403
-
-#     # Delete the listing and update the ticket status
-#     db.session.delete(listing)
-#     ticket.is_listed = False
-#     db.session.commit()
-
-#     return jsonify({'message': 'Listing deleted successfully'}), 200
-
+# ------------------------------
+# Endpoint: POST /schedule/upload
+# Upload a schedule from an HTML file, a URL, or a manually created schedule.
+# Ensures that year and event_type are present; school_name is now optional (Defaults to "Public").
+# ------------------------------
 @app.route('/schedule/upload', methods=['POST'])
 def upload_schedule():
-    """
-    Handles schedule upload from an HTML file, a URL, or a manually created schedule.
-    Ensures that year and event_type are present; school_name is now optional.
-    """
-
     log_mongo_debug(
         level="INFO",
         message="upload_schedule endpoint invoked",
@@ -670,12 +573,13 @@ def upload_schedule():
         )
         return jsonify({"error": "An unexpected error occurred"}), 500
 
+# ------------------------------
+# Endpoint: GET /schedule/all
+# Retrieve all schedules grouped by school, returning "public" schedules for everyone,
+# and also the user's school (if logged in).
+# ------------------------------
 @app.route('/schedule/all', methods=['GET'])
 def retrieve_all_schedules():
-    """
-    Retrieves all schedules grouped by school, returning "public" schedules for everyone,
-    and also the user's school (if logged in).
-    """
     try:
         # If the user is logged in, session['school'] is set
         user_school = session.get("school")
@@ -719,12 +623,14 @@ def retrieve_all_schedules():
     except Exception as e:
         return jsonify({"error": f"Failed to retrieve schedule data: {str(e)}"}), 500
 
+
+# ------------------------------
+# Endpoint: GET /schedule/retrieve
+# Retrieve schedules based on filters: school name and event type,
+# but always includes "public" schedules plus the user's own school if logged in.
+# ------------------------------
 @app.route('/schedule/retrieve', methods=['GET'])
 def retrieve_schedule():
-    """
-    Retrieves schedules based on filters: school name and event type,
-    but always includes "public" schedules plus the user's own school if logged in.
-    """
     try:
         user_school = session.get("school")
         allowed_schools = ["public"]

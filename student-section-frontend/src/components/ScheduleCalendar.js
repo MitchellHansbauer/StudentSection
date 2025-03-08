@@ -3,14 +3,21 @@ import axios from "axios";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
+import { useNavigate } from "react-router-dom";
 
 function ScheduleCalendar() {
-  const [schedules, setSchedules] = useState([]); // Aggregated schedules grouped by school
+  const [schedules, setSchedules] = useState([]);
   const [selectedSchool, setSelectedSchool] = useState("");
   const [selectedEventType, setSelectedEventType] = useState("");
-  const [availableEventTypes, setAvailableEventTypes] = useState([]); // Available event types for the selected school
-  const [events, setEvents] = useState([]); // Calendar events
+  const [availableEventTypes, setAvailableEventTypes] = useState([]);
+  const [events, setEvents] = useState([]);
   const [error, setError] = useState("");
+
+  // New state for modal navigation
+  const [showModal, setShowModal] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+
+  const navigate = useNavigate();
 
   // Fetch aggregated schedules on component mount.
   useEffect(() => {
@@ -23,10 +30,9 @@ function ScheduleCalendar() {
   // Update available event types when the selected school changes.
   useEffect(() => {
     if (selectedSchool) {
-      const schoolData = schedules.find(s => s._id === selectedSchool);
+      const schoolData = schedules.find((s) => s._id === selectedSchool);
       if (schoolData && schoolData.events) {
-        // Extract unique event types.
-        const eventTypes = schoolData.events.map(event => event.event_type);
+        const eventTypes = schoolData.events.map((event) => event.event_type);
         const uniqueTypes = Array.from(new Set(eventTypes));
         setAvailableEventTypes(uniqueTypes);
       } else {
@@ -35,7 +41,6 @@ function ScheduleCalendar() {
     } else {
       setAvailableEventTypes([]);
     }
-    // Reset the selected event type when school changes.
     setSelectedEventType("");
   }, [selectedSchool, schedules]);
 
@@ -46,7 +51,7 @@ function ScheduleCalendar() {
       return;
     }
 
-    const schoolData = schedules.find(s => s._id === selectedSchool);
+    const schoolData = schedules.find((s) => s._id === selectedSchool);
     if (!schoolData) {
       setError("No schedule found for the selected school.");
       return;
@@ -54,9 +59,9 @@ function ScheduleCalendar() {
 
     let eventData;
     if (selectedEventType) {
-      // Find the event with the matching event type.
       eventData = schoolData.events.find(
-        ev => ev.event_type.toLowerCase() === selectedEventType.toLowerCase()
+        (ev) =>
+          ev.event_type.toLowerCase() === selectedEventType.toLowerCase()
       );
       if (!eventData) {
         setError("No event found for the selected event type.");
@@ -64,27 +69,31 @@ function ScheduleCalendar() {
         return;
       }
     } else {
-      // If no event type is selected, combine games from all events.
-      eventData = { games: schoolData.events.reduce((acc, ev) => acc.concat(ev.games), []) };
+      eventData = {
+        games: schoolData.events.reduce(
+          (acc, ev) => acc.concat(ev.games),
+          []
+        ),
+      };
     }
 
-    // Convert the games array into FullCalendar event format.
     const formattedEvents = eventData.games.map((game) => ({
       title: game.opponent || eventData.event_type || "Unnamed Event",
       start: parseDate(game.date),
-      time: game.time || "TBD",
-      location: game.location || "Unknown Location",
-      additionalInfo: game.result || "",
+      extendedProps: {
+        time: game.time || "TBD",
+        location: game.location || "Unknown Location",
+        additionalInfo: game.result || "",
+      },
     }));
 
     setEvents(formattedEvents);
     setError("");
   };
 
-  // Helper function to parse MM/DD/YYYY date strings.
   const parseDate = (dateString) => {
-    if (dateString.includes('/')) {
-      const parts = dateString.split('/');
+    if (dateString.includes("/")) {
+      const parts = dateString.split("/");
       if (parts.length === 3) {
         const [month, day, year] = parts;
         return new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
@@ -94,11 +103,35 @@ function ScheduleCalendar() {
     return isNaN(d.getTime()) ? new Date() : d;
   };
 
+  // Modal handlers for navigation.
+  const closeModal = () => {
+    setShowModal(false);
+    setSelectedEvent(null);
+  };
+
+  const handleListTicket = () => {
+    // Navigate to the PostTicket component with event details pre-populated.
+    navigate("/postticket", { state: {
+      event_name: selectedEvent.title,
+      event_date: selectedEvent.start.toISOString(),
+      venue: selectedEvent.extendedProps.location
+    }});
+    closeModal();
+  };
+
+  const handlePurchaseTicket = () => {
+    // Navigate to the marketplace, optionally passing filter data.
+    navigate("/marketplace", { state: {
+      event_name: selectedEvent.title,
+      event_date: selectedEvent.start.toISOString()
+    }});
+    closeModal();
+  };
+
   return (
     <div style={{ textAlign: "center", padding: "20px" }}>
       <h2>Schedule Calendar</h2>
 
-      {/* Dropdown for Selecting School */}
       <select
         value={selectedSchool}
         onChange={(e) => setSelectedSchool(e.target.value)}
@@ -112,7 +145,6 @@ function ScheduleCalendar() {
         ))}
       </select>
 
-      {/* Dropdown for Selecting Event Type (Populated Dynamically) */}
       <select
         value={selectedEventType}
         onChange={(e) => setSelectedEventType(e.target.value)}
@@ -126,28 +158,55 @@ function ScheduleCalendar() {
         ))}
       </select>
 
-      {/* Button to Fetch Filtered Schedule */}
       <button onClick={fetchFilteredSchedule} style={{ padding: "10px" }}>
         Load Schedule
       </button>
 
-      {/* Error Message */}
       {error && <p style={{ color: "red" }}>{error}</p>}
 
-      {/* Display Calendar if Events Exist */}
       <div style={{ marginTop: "20px" }}>
         <FullCalendar
           plugins={[dayGridPlugin, timeGridPlugin]}
           initialView="dayGridMonth"
           events={events}
-          eventClick={(info) =>
-            alert(
-              `Details:\n${info.event.title}\nLocation: ${info.event.extendedProps.location}\nTime: ${info.event.extendedProps.time}\nInfo: ${info.event.extendedProps.additionalInfo}`
-            )
-          }
+          eventClick={(info) => {
+            // When an event is clicked, open the modal with event details.
+            setSelectedEvent(info.event);
+            setShowModal(true);
+          }}
           height="600px"
         />
       </div>
+
+      {showModal && selectedEvent && (
+        <div className="modal show" style={{ display: "block", backgroundColor: "rgba(0,0,0,0.5)" }}>
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Event Options</h5>
+                <button type="button" className="btn-close" onClick={closeModal}></button>
+              </div>
+              <div className="modal-body">
+                <p><strong>Event:</strong> {selectedEvent.title}</p>
+                <p>
+                  <strong>Date:</strong> {selectedEvent.start.toLocaleString()}
+                </p>
+                <p>
+                  <strong>Location:</strong> {selectedEvent.extendedProps.location}
+                </p>
+              </div>
+              <div className="modal-footer">
+                <button className="btn btn-primary" onClick={handleListTicket}>
+                  List Ticket
+                </button>
+                <button className="btn btn-secondary" onClick={handlePurchaseTicket}>
+                  Purchase Ticket
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
