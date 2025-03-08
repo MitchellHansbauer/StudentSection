@@ -23,7 +23,7 @@ Before getting started, ensure you have the following installed on your machine:
    ```
 3. **Generate Redis Secret Key**:
    ```sh
-   python -c 'import secrets; print(secrets.token_hex())'
+   python -c "import secrets; print(secrets.token_hex())"
    export SECRET_KEY=<TOKEN_FROM_ABOVE>
    ```
    Note: use _set_ if on Windows
