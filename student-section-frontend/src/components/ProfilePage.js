@@ -14,6 +14,7 @@ function ProfilePage() {
 
   // For UC login collapse
   const [showUcLogin, setShowUcLogin] = useState(false);
+  const [myTickets, setMyTickets] = useState([]);
 
   // UC credentials
   const [ucUserName, setUcUserName] = useState('');
@@ -59,6 +60,19 @@ function ProfilePage() {
         setError(err.response?.data?.error || 'Error loading profile.');
       });
   }, [userId]);
+  
+    // 3) Also fetch their tickets (once we have userId)
+    useEffect(() => {
+      if (!userId) return;
+      axios.get('http://localhost:5000/tickets/mine', { withCredentials: true })
+        .then((res) => {
+          setMyTickets(res.data.tickets || []);
+        })
+        .catch((err) => {
+          console.error(err);
+          setError(err.response?.data?.error || 'Error loading tickets.');
+        });
+    }, [userId]);
 
   // Handle main profile changes
   const handleChange = (e) => {
@@ -102,27 +116,50 @@ function ProfilePage() {
     e.preventDefault();
     setUcMessage('');
     setError('');
-
+  
     if (!userId) {
       setError('No session found. Please log in.');
       return;
     }
-
-    axios
-      .post(
-        `http://localhost:5000/users/${userId}/third_party`,
-        { userName: ucUserName, password: ucPassword },
+  
+    // 1) Link UC account
+    axios.post(
+      `http://localhost:5000/users/${userId}/third_party`,
+      {
+        userName: ucUserName,
+        password: ucPassword,
+      },
+      { withCredentials: true }
+    )
+    .then((res) => {
+      setUcMessage(
+        `Success! Paciolan ID connected: ${res.data.paciolan_id || 'Unknown'}`
+      );
+      // 2) Now automatically import tickets using the newly linked account
+      return axios.post(
+        'http://localhost:5000/tickets/import',
+        // Optionally pass a season_code or event_date here if needed
+        // e.g. { season_code: "F24" },
+        {},
         { withCredentials: true }
-      )
-      .then((res) => {
-        setUcMessage(
-          `Success! Paciolan ID connected: ${res.data.paciolan_id || 'Unknown'}`
-        );
-      })
-      .catch((err) => {
-        console.error(err);
-        setError(err.response?.data?.error || 'Error connecting UC account.');
-      });
+      );
+    })
+    .then((importRes) => {
+      // e.g. "Imported 10 new tickets"
+      if (importRes.data.message) {
+        setUcMessage((prev) => prev + ` | ${importRes.data.message}`);
+      }
+      // 3) (Optionally) re-fetch the user's tickets so they appear immediately on the page
+      return axios.get('http://localhost:5000/tickets/mine', { withCredentials: true });
+    })
+    .then((mineRes) => {
+      // Suppose you have a state setter for the user's tickets
+      setMyTickets(mineRes.data.tickets || []);
+    })
+    .catch((err) => {
+      console.error(err);
+      setError(err.response?.data?.error || 'Error connecting UC account or importing tickets.');
+    });
   };
 
   return (
@@ -130,7 +167,7 @@ function ProfilePage() {
       <h2>My Profile</h2>
       {message && <p style={{ color: 'green' }}>{message}</p>}
       {error && <p style={{ color: 'red' }}>{error}</p>}
-
+  
       {/* Profile Form */}
       <form onSubmit={handleSave}>
         <div className="mb-3">
@@ -169,13 +206,13 @@ function ProfilePage() {
             onChange={handleChange}
           />
         </div>
-
+  
         <button type="submit" className="btn btn-primary">
           Save Changes
         </button>
       </form>
-
-      {/* UC Login Section is shown if showUcLogin is true */}
+  
+      {/* UC Login Section */}
       {showUcLogin && (
         <div style={{ marginTop: '1rem' }}>
           <h4>UC/Paciolan Login</h4>
@@ -205,8 +242,26 @@ function ProfilePage() {
           </form>
         </div>
       )}
+  
+      {/* Display User's Tickets */}
+      <hr />
+      <h3>My Tickets</h3>
+      {myTickets.length === 0 ? (
+        <p>No tickets found.</p>
+      ) : (
+        <ul>
+          {myTickets.map((ticket) => (
+            <li key={ticket._id}>
+              <strong>{ticket.event_name}</strong>
+              <br />
+              Date: {new Date(ticket.event_date).toLocaleString()}
+              <br />
+              Status: {ticket.status}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
-
 export default ProfilePage;

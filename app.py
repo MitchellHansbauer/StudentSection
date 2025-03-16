@@ -14,6 +14,7 @@ from bson import ObjectId
 from datetime import timedelta
 from schedule_parser import parse_html_schedule
 
+
 app = Flask(__name__)
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 app.config['SESSION_COOKIE_SECURE'] = False  # if you're on HTTP in dev
@@ -301,6 +302,116 @@ def connect_third_party_account(user_id):
 
 
 # ------------------------------
+# Endpoint: POST /tickets/import
+# Import tickets from a third-party system (e.g. Paciolan) using a user's linked account.
+# This example follows a simple flow: get the user's Paciolan ID, call the mock API,
+# parse the response, and insert the tickets into the MongoDB collection.
+# ------------------------------
+@app.route('/tickets/import', methods=['POST'])
+def import_tickets():
+    # 1) Verify user is logged in (session)
+    if 'user_id' not in session:
+        return jsonify({"error": "Not logged in"}), 401
+
+    user_id = session['user_id']
+    user_doc = users_collection.find_one({"_id": ObjectId(user_id)})
+    if not user_doc:
+        return jsonify({"error": "User not found"}), 404
+
+    # 2) Retrieve the user's Paciolan ID
+    paciolan_id = user_doc.get("third_party_account", {}).get("paciolan_id")
+    if not paciolan_id:
+        return jsonify({"error": "User does not have a linked UC account"}), 400
+
+    # 3) Parse request data. Accept an optional season_code and event_date.
+    data = request.get_json() or {}
+    season_code = data.get("season_code", "F24")
+    
+    if "event_date" in data:
+        try:
+            user_supplied_date = datetime.fromisoformat(data["event_date"])
+        except (ValueError, TypeError):
+            return jsonify({"error": "Invalid event_date format; must be ISO-8601"}), 400
+    else:
+        user_supplied_date = None
+
+    # 4) Call the external (mock) API using the user's paciolan_id and season_code.
+    url = f"http://localhost:3003/v2/patron/{paciolan_id}/orders/{season_code}"
+    headers = {"Accept": "application/json", "User-Agent": "TicketImporter/1.0"}
+    response = requests.get(url, headers=headers)
+
+    if response.status_code == 404:
+        return jsonify({"error": f"No tickets found for paciolan_id={paciolan_id}, season={season_code}"}), 404
+    elif response.status_code != 200:
+        return jsonify({"error": f"Mock API error: {response.status_code}"}), 502
+
+    # 5) Parse the response and build ticket documents with all fields.
+    # The entire ticket_doc (including the transfer object) will be stored in MongoDB.
+    data_json = response.json()
+    orders = data_json.get("value", {}).get("lineItemOHVos", [])
+    new_tickets = []
+
+    for order in orders:
+        order_name = order.get("name", "Unknown Event")
+        order_season = order.get("seasonCd", season_code)
+        event_hvos = order.get("eventOHVos", [])
+
+        for event_item in event_hvos:
+            event_date_str = event_item.get("eventDtStr")
+            dt_obj = None
+            if event_date_str:
+                try:
+                    dt_obj = datetime.fromisoformat(event_date_str)
+                except ValueError:
+                    dt_obj = None
+
+            seat_ohvos = event_item.get("seatOHVos", [])
+            for seat_info in seat_ohvos:
+                ticket_doc = {
+                    "seller_id": user_id,
+                    "school_name": user_doc.get("School", "public"),
+                    "event_name": order_name,
+                    "event_date": dt_obj or user_supplied_date,
+                    "venue": seat_info.get("dispositionName", "Unknown"),
+                    "price": "0",  # Set price appropriately if available
+                    "currency": "USD",
+                    "status": "unavailable",  # Ticket starts as available
+                    "is_transferrable": True,
+                    "created_at": datetime.utcnow(),
+                    # Entire transfer object required by the Transfer API:
+                    "transfer": {
+                        "Sender": {
+                            "patronId": paciolan_id
+                        },
+                        "Seats": [
+                            {
+                                "season": order_season,
+                                "event": event_item.get("id", "Unknown"),
+                                "priceLevel": "1",   # Default value; adjust as needed
+                                "priceType": "A",    # Default value; adjust as needed
+                                "seatInfo": {
+                                    "level": seat_info.get("level", "Unknown"),
+                                    "section": seat_info.get("section", seat_info.get("dispositionName", "Unknown")),
+                                    "row": seat_info.get("row", 0),      # Default to 0 if not provided
+                                    "seats": seat_info.get("qty", 1),    # Default to 1 seat if not provided
+                                    "soldFor": event_item.get("cost", 0),
+                                    "marketplace": "store"  # Default marketplace value
+                                }
+                            }
+                        ]
+                    }
+                }
+                new_tickets.append(ticket_doc)
+
+    # 6) Insert all ticket documents into MongoDB. This stores the entirety of each ticket_doc.
+    if new_tickets:
+        result = tickets_collection.insert_many(new_tickets)
+        return jsonify({"message": f"Imported {len(new_tickets)} new tickets"}), 201
+
+    return jsonify({"message": "No tickets to import"}), 200
+
+
+# ------------------------------
 # Endpoint: POST /tickets
 # Create a ticket listing using schedule event details.
 # ------------------------------
@@ -346,6 +457,39 @@ def post_ticket():
         "message": "Ticket listed successfully",
         "ticket_id": str(result.inserted_id)
     }), 201
+
+# ------------------------------
+# Endpoint: GET /tickets
+# List all available ticket listings (public endpoint)
+# ------------------------------
+@app.route('/tickets/mine', methods=['GET'])
+def get_my_tickets():
+    """
+    Returns a list of the logged-in user's tickets from MongoDB.
+    Uses session-based authentication.
+    """
+    if 'user_id' not in session:
+        return jsonify({"error": "Not logged in"}), 401
+
+    user_id = session['user_id']
+    # Query all tickets where seller_id matches the user's ObjectId
+    tickets_cursor = tickets_collection.find({"seller_id": ObjectId(user_id)})
+
+    # Convert the cursor into a list of dictionaries we can JSON-ify
+    user_tickets = []
+    for doc in tickets_cursor:
+        # Convert ObjectIds or datetimes to strings if desired
+        doc['_id'] = str(doc['_id'])
+        doc['seller_id'] = str(doc['seller_id'])
+        if 'created_at' in doc and isinstance(doc['created_at'], datetime):
+            doc['created_at'] = doc['created_at'].isoformat()
+        # same for event_date if it’s a datetime
+        if 'event_date' in doc and isinstance(doc['event_date'], datetime):
+            doc['event_date'] = doc['event_date'].isoformat()
+
+        user_tickets.append(doc)
+
+    return jsonify({"tickets": user_tickets}), 200
 
 
 # ------------------------------
