@@ -37,7 +37,7 @@ def generate_session_id():
 server_session = Session(app)
 
 # Stripe Integration
-os.environ["STRIPE_SECRET_KEY"] = "pk_test_51QonQAJa1VtbThKgAwsAb8RRx5Pi9tIv2C2bpCKk26eJjYdk912HoJDSZshm2iAlVN3G6Gr8hptknMINp27sob2E00BTXIUauL"
+os.environ["STRIPE_SECRET_KEY"] = "sk_test_51Qowe4R6XyVnHR5eZpehxe32nBhRjciGkrbojz4gV8DbbqLUtQl0RrfOso2Uc1Uq4G0SQTGSIFKdYuBPussu2Uap00mq5IVAwo"
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 
 # MongoDB connection
@@ -230,6 +230,74 @@ def update_profile(user_id):
         return jsonify({"message": "Profile updated successfully"}), 200
     else:
         return jsonify({"error": "No changes or user not found"}), 400
+
+
+# ------------------------------
+# Endpoint: POST /users/<string:user_id>/third_party
+# Connect a third-party account to the user's profile, e.g. Paciolan.
+# This example assumes the third-party account has a username and password.
+# This example also assumes the third-party account has an ID that we need to store.
+# ------------------------------
+@app.route('/users/<string:user_id>/third_party', methods=['POST'])
+def connect_third_party_account(user_id):
+    # 1) Confirm session user matches the user_id
+    if 'user_id' not in session or session['user_id'] != user_id:
+        return jsonify({"error": "Unauthorized"}), 403
+
+    data = request.get_json()
+    # Example required fields, adjust as needed
+    required_fields = ['userName', 'password']
+    for field in required_fields:
+        if field not in data:
+            return jsonify({"error": f"Missing field: {field}"}), 400
+
+    # 2) Get a mock token if your endpoint requires it (UC Does)
+    mock_token = get_mock_token()
+
+    # 3) Build your GET request
+    params = {
+        'userName': data['userName']
+    }
+    headers = {
+        'Authorization': f'Bearer {mock_token}',
+        'PAC-Application-ID': 'application.id',
+        'PAC-API-Key': 'applicmock.api.key',
+        'PAC-Channel-Code': 'mock.channel.code',
+        'PAC-Organization-ID': 'OrganizationID',
+        'User-Agent': 'StudentSection/v1.0',
+        'Accept': 'application/json'
+    }
+    if mock_token:
+        headers['Authorization'] = f'Bearer {mock_token}'
+
+    # 4) Make the request to the mock route
+    response = requests.get("http://localhost:3003/v2/accounts", params=params, headers=headers)
+    if response.status_code != 200:
+        return jsonify({"error": "Unable to retrieve account from mock."}), 502
+
+    account_data = response.json()
+
+    # 5) Check if we got an account object. In your sample JSON, it's in .get("key", {}).get("id", ...)
+    paciolan_id = account_data.get("key", {}).get("id")
+    if not paciolan_id:
+        return jsonify({"error": "No paciolan_id found in mock response."}), 404
+
+    # 6) Store the third-party account details in MongoDB
+    #    e.g. "third_party_account": { "paciolan_id": paciolan_id, "userName": data["userName"] }
+    users_collection.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$set": {
+            "third_party_account": {
+                "paciolan_id": paciolan_id,
+                "userName": data["userName"]
+            }
+        }}
+    )
+
+    return jsonify({
+        "message": "Third-party account connected successfully.",
+        "paciolan_id": paciolan_id
+    }), 200
 
 
 # ------------------------------

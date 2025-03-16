@@ -1,0 +1,146 @@
+{
+    "key": {
+        "id": "14375938",
+        "dbId": "CINN"
+    },
+    "accountType": "I",
+    "accountName": "Mitchell Hansbauer",
+    "accountStatusId": "A",
+    "accountStatusName": "Active",
+    "preferredLanguageId": "en_US",
+    "primaryContactId": "7f5af8d0-be33-11eb-9366-0000c0a83607",
+    "tktMailAddrId": null,
+    "tktBillAddrId": "P",
+    "fndMailAddrId": null,
+    "fndBillAddrId": null,
+    "extIds": null,
+    "creditCards": null,
+    "bankAccount": null,
+    "profileIds": null,
+    "orgName": null,
+    "orgAddresses": null,
+    "loginEmail": "hansbama@mail.uc.edu",
+    "primaryContact": {
+        "key": {
+            "id": "7f5af8d0-be33-11eb-9366-0000c0a83607",
+            "accountId": "14375938",
+            "dbId": "CINN"
+        },
+        "imageId": null,
+        "name": {
+            "first": "Mitchell",
+            "last": "Hansbauer",
+            "middle": null
+        },
+        "phones": [
+            {
+                "type": "C",
+                "number": "(151) 333-4049",
+                "donotcall": false,
+                "label": "Cell Phone"
+            }
+        ],
+        "emails": [
+            {
+                "value1": "E",
+                "value2": "hansbama@mail.uc.edu",
+                "label": "Email Address"
+            }
+        ],
+        "addresses": [
+            {
+                "type": "P",
+                "mailname": "Mitchell Hansbauer",
+                "address1": "880 Blackpine Drive",
+                "address2": null,
+                "address3": null,
+                "careof": null,
+                "city": "Milford",
+                "county": "Clermont",
+                "state": "OH",
+                "zipcode": "45150",
+                "country": "US",
+                "datefrom": null,
+                "dateto": null,
+                "yearlyfl": 0,
+                "year": "",
+                "regionid": null,
+                "label": "Primary"
+            }
+        ]
+    },
+    "contacts": [
+        {
+            "key": {
+                "id": "7f5af8d0-be33-11eb-9366-0000c0a83607",
+                "accountId": "14375938",
+                "dbId": "CINN"
+            },
+            "imageId": null,
+            "name": {
+                "first": "Mitchell",
+                "last": "Hansbauer",
+                "middle": null
+            },
+            "phones": [
+                {
+                    "type": "C",
+                    "number": "(151) 333-4049",
+                    "donotcall": false,
+                    "label": "Cell Phone"
+                }
+            ],
+            "emails": [
+                {
+                    "value1": "E",
+                    "value2": "hansbama@mail.uc.edu",
+                    "label": "Email Address"
+                }
+            ],
+            "addresses": [
+                {
+                    "type": "P",
+                    "mailname": "Mitchell Hansbauer",
+                    "address1": "880 Blackpine Drive",
+                    "address2": null,
+                    "address3": null,
+                    "careof": null,
+                    "city": "Milford",
+                    "county": "Clermont",
+                    "state": "OH",
+                    "zipcode": "45150",
+                    "country": "US",
+                    "datefrom": null,
+                    "dateto": null,
+                    "yearlyfl": 0,
+                    "year": "",
+                    "regionid": null,
+                    "label": "Primary"
+                }
+            ]
+        }
+    ],
+    "isStudent": true,
+    "cstmType": "S24",
+    "isCustomerActive": "1",
+    "dataAccountId": "675",
+    "billingAddress": {
+        "type": "P",
+        "mailname": "Mitchell Hansbauer",
+        "address1": "880 Blackpine Drive",
+        "address2": null,
+        "address3": null,
+        "careof": null,
+        "city": "Milford",
+        "county": "Clermont",
+        "state": "OH",
+        "zipcode": "45150",
+        "country": "US",
+        "datefrom": null,
+        "dateto": null,
+        "yearlyfl": 0,
+        "year": "",
+        "regionid": null,
+        "label": "Primary"
+    }
+}
