@@ -3,19 +3,24 @@ import axios from 'axios';
 
 function ProfilePage() {
   const [userId, setUserId] = useState(null);
-  const [profile, setProfile] = useState({ phone: '', School: '', FirstName: '', LastName: '' });
+  const [profile, setProfile] = useState({
+    phone: '',
+    School: '',
+    FirstName: '',
+    LastName: '',
+  });
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
-  // Add state for the UC login toggling
+  // For UC login collapse
   const [showUcLogin, setShowUcLogin] = useState(false);
 
-  // For UC login credentials
+  // UC credentials
   const [ucUserName, setUcUserName] = useState('');
   const [ucPassword, setUcPassword] = useState('');
   const [ucMessage, setUcMessage] = useState('');
 
-  // 1) On mount, fetch user session
+  // 1) On mount, fetch the session user
   useEffect(() => {
     axios
       .get('http://localhost:5000/users/me', { withCredentials: true })
@@ -39,7 +44,15 @@ function ProfilePage() {
     axios
       .get(`http://localhost:5000/users/${userId}/profile`, { withCredentials: true })
       .then((res) => {
-        setProfile((prev) => ({ ...prev, ...res.data.profile }));
+        const loadedProfile = res.data.profile;
+        setProfile((prev) => ({
+          ...prev,
+          ...loadedProfile,
+        }));
+        // Automatically show UC fields if the loaded School is "University of Cincinnati"
+        if (loadedProfile.School === 'University of Cincinnati') {
+          setShowUcLogin(true);
+        }
       })
       .catch((err) => {
         console.error(err);
@@ -47,13 +60,13 @@ function ProfilePage() {
       });
   }, [userId]);
 
-  // Handler for changes to main profile fields
+  // Handle main profile changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setProfile((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Save profile changes
+  // Save profile
   const handleSave = (e) => {
     e.preventDefault();
     setMessage('');
@@ -84,7 +97,7 @@ function ProfilePage() {
       });
   };
 
-  // Connect to UC account
+  // Connect UC account
   const handleConnectUc = (e) => {
     e.preventDefault();
     setUcMessage('');
@@ -118,7 +131,7 @@ function ProfilePage() {
       {message && <p style={{ color: 'green' }}>{message}</p>}
       {error && <p style={{ color: 'red' }}>{error}</p>}
 
-      {/* Existing Profile Form */}
+      {/* Profile Form */}
       <form onSubmit={handleSave}>
         <div className="mb-3">
           <label>Phone</label>
@@ -156,23 +169,13 @@ function ProfilePage() {
             onChange={handleChange}
           />
         </div>
+
         <button type="submit" className="btn btn-primary">
           Save Changes
         </button>
       </form>
 
-      <hr />
-      {/* Button to toggle display of UC login fields */}
-      <button
-        type="button"
-        className="btn btn-secondary"
-        style={{ margin: '10px 0' }}
-        onClick={() => setShowUcLogin(!showUcLogin)}
-      >
-        {showUcLogin ? 'Hide UC Connect' : 'Connect your UC Ticketing'}
-      </button>
-
-      {/* Conditionally rendered UC login section */}
+      {/* UC Login Section is shown if showUcLogin is true */}
       {showUcLogin && (
         <div style={{ marginTop: '1rem' }}>
           <h4>UC/Paciolan Login</h4>
