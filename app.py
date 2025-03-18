@@ -16,7 +16,6 @@ from schedule_parser import parse_html_schedule
 
 
 app = Flask(__name__)
-app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 app.config['SESSION_COOKIE_SECURE'] = False  # if you're on HTTP in dev
 CORS(app, supports_credentials=True)
 
@@ -25,6 +24,8 @@ app.secret_key = os.getenv('SECRET_KEY', default='BAD_SECRET_KEY')
 # Configure Redis for storing the session data on the server-side
 app.config['SESSION_TYPE'] = 'redis'
 app.config['SESSION_PERMANENT'] = True
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=6)
+app.config['SESSION_SERIALIZATION_FORMAT'] = 'json'
 app.config['SESSION_USE_SIGNER'] = True
 app.config['SESSION_REDIS'] = redis.from_url('redis://127.0.0.1:6379')
 app.config['SESSION_COOKIE_SECURE'] = True # uses https or not
@@ -130,25 +131,36 @@ def login():
     data = request.get_json()
     email = data.get("email")
     password = data.get("password")
-    #Define Session Variables
-    global sessionid
-    global username
 
     if not email or not password:
         return jsonify({"error": "Email and password are required"}), 400
 
-    # Look up the user by email and password (iIMPLEMENT COMPARING HASHED PASSWORDS)
+    # Look up the user by email and password
     user = users_collection.find_one({"email": email, "password": password})
-    
     if not user:
         return jsonify({"error": "Invalid email or password"}), 401
 
-    # Once authenticated:
+    cursor = 0
+    keys = r.scan(cursor=cursor, match="session:*")
+    for key in keys[1]:
+        session_data=r.get(key)
+        if email in session_data:
+            r.delete(key)
+
+    # Create a new session
     session['user_id'] = str(user["_id"])
-    session['email']   = user["email"]
-    session['school']  = user.get("School")
+    session['email'] = user["email"]
+    session['school'] = user.get("School")
 
     return jsonify({"message": "Login successful"}), 200
+
+#Function to pull the new session for later use if need be
+def get_user_session(useremail):
+    sessions=r.scan(cursor=0, match="session:*")
+    for newsession in sessions[1]:
+        session_data=r.get(newsession)
+        if useremail in session_data:
+            return newsession
 
 
 # ------------------------------
