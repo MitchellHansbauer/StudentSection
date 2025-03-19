@@ -347,9 +347,22 @@ def import_tickets():
     else:
         user_supplied_date = None
 
-    # 4) Call the external (mock) API using the user's paciolan_id and season_code.
+    # 4) **Obtain your mock token** and safely handle error
+    token = get_mock_token()
+    if not token:
+        return jsonify({"error": "Unable to retrieve mock token"}), 500
+    
+    # 5) Call the external (mock) API using the user's paciolan_id and season_code.
     url = f"http://localhost:3003/v2/patron/{paciolan_id}/orders/{season_code}"
-    headers = {"Accept": "application/json", "User-Agent": "TicketImporter/1.0"}
+    headers = {
+        "Authorization": f"Bearer {token}",    # Use the token from get_mock_token()
+        "PAC-Application-ID": "TicketImporter/1.0",
+        "PAC-API-Key": "mock.api.key",
+        "PAC-Channel-Code": "mock.channel.code",
+        "PAC-Organization-ID": "OrganizationID",
+        "User-Agent": "StudentSection/v1.0",
+        "Accept": "application/json"
+    }
     response = requests.get(url, headers=headers)
 
     if response.status_code == 404:
@@ -357,8 +370,7 @@ def import_tickets():
     elif response.status_code != 200:
         return jsonify({"error": f"Mock API error: {response.status_code}"}), 502
 
-    # 5) Parse the response and build ticket documents with all fields.
-    # The entire ticket_doc (including the transfer object) will be stored in MongoDB.
+    # 6) Parse the response and build ticket documents
     data_json = response.json()
     orders = data_json.get("value", {}).get("lineItemOHVos", [])
     new_tickets = []
@@ -380,17 +392,16 @@ def import_tickets():
             seat_ohvos = event_item.get("seatOHVos", [])
             for seat_info in seat_ohvos:
                 ticket_doc = {
-                    "seller_id": user_id,
+                    "seller_id": ObjectId(user_id),
                     "school_name": user_doc.get("School", "public"),
                     "event_name": order_name,
                     "event_date": dt_obj or user_supplied_date,
                     "venue": seat_info.get("dispositionName", "Unknown"),
-                    "price": "0",  # Set price appropriately if available
+                    "price": "0",  # Set price if available
                     "currency": "USD",
-                    "status": "unavailable",  # Ticket starts as available
+                    "status": "unavailable",  # or "available" if you want them open for purchase
                     "is_transferrable": True,
                     "created_at": datetime.utcnow(),
-                    # Entire transfer object required by the Transfer API:
                     "transfer": {
                         "Sender": {
                             "patronId": paciolan_id
@@ -399,15 +410,15 @@ def import_tickets():
                             {
                                 "season": order_season,
                                 "event": event_item.get("id", "Unknown"),
-                                "priceLevel": "1",   # Default value; adjust as needed
-                                "priceType": "A",    # Default value; adjust as needed
+                                "priceLevel": "1",
+                                "priceType": "A",
                                 "seatInfo": {
                                     "level": seat_info.get("level", "Unknown"),
                                     "section": seat_info.get("section", seat_info.get("dispositionName", "Unknown")),
-                                    "row": seat_info.get("row", 0),      # Default to 0 if not provided
-                                    "seats": seat_info.get("qty", 1),    # Default to 1 seat if not provided
+                                    "row": seat_info.get("row", 0),
+                                    "seats": seat_info.get("qty", 1),
                                     "soldFor": event_item.get("cost", 0),
-                                    "marketplace": "store"  # Default marketplace value
+                                    "marketplace": "store"
                                 }
                             }
                         ]
@@ -415,9 +426,9 @@ def import_tickets():
                 }
                 new_tickets.append(ticket_doc)
 
-    # 6) Insert all ticket documents into MongoDB. This stores the entirety of each ticket_doc.
+    # 7) Insert the ticket documents into MongoDB
     if new_tickets:
-        result = tickets_collection.insert_many(new_tickets)
+        tickets_collection.insert_many(new_tickets)
         return jsonify({"message": f"Imported {len(new_tickets)} new tickets"}), 201
 
     return jsonify({"message": "No tickets to import"}), 200
