@@ -24,7 +24,7 @@ function ProfilePage() {
   // 1) On mount, fetch the session user
   useEffect(() => {
     axios
-      .get('http://localhost:5000/users/me', { withCredentials: true })
+      .get('https://studentsection.xyz/flaskapi/users/me', { withCredentials: true })
       .then((res) => {
         const me = res.data;
         if (!me || !me.email) {
@@ -43,15 +43,16 @@ function ProfilePage() {
   useEffect(() => {
     if (!userId) return;
     axios
-      .get(`http://localhost:5000/users/${userId}/profile`, { withCredentials: true })
+      .get(`https://studentsection.xyz/flaskapi/users/${userId}/profile`, { withCredentials: true })
       .then((res) => {
         const loadedProfile = res.data.profile;
         setProfile((prev) => ({
           ...prev,
           ...loadedProfile,
         }));
-        // Automatically show UC fields if the loaded School is "University of Cincinnati"
-        if (loadedProfile.School === 'University of Cincinnati') {
+        // Normalize the School value for comparison
+        const schoolName = loadedProfile.School.trim().toLowerCase();
+        if (schoolName === 'university of cincinnati' || schoolName === 'uc') {
           setShowUcLogin(true);
         }
       })
@@ -64,7 +65,7 @@ function ProfilePage() {
     // 3) Also fetch their tickets (once we have userId)
     useEffect(() => {
       if (!userId) return;
-      axios.get('http://localhost:5000/tickets/mine', { withCredentials: true })
+      axios.get('https://studentsection.xyz/flaskapi/tickets/mine', { withCredentials: true })
         .then((res) => {
           setMyTickets(res.data.tickets || []);
         })
@@ -93,7 +94,7 @@ function ProfilePage() {
 
     axios
       .put(
-        `http://localhost:5000/users/${userId}/profile`,
+        `https://studentsection.xyz/flaskapi/users/${userId}/profile`,
         {
           phone: profile.phone,
           School: profile.School,
@@ -124,7 +125,7 @@ function ProfilePage() {
   
     // 1) Link UC account
     axios.post(
-      `http://localhost:5000/users/${userId}/third_party`,
+      `https://studentsection.xyz/flaskapi/users/${userId}/third_party`,
       {
         userName: ucUserName,
         password: ucPassword,
@@ -137,7 +138,7 @@ function ProfilePage() {
       );
       // 2) Now automatically import tickets using the newly linked account
       return axios.post(
-        'http://localhost:5000/tickets/import',
+        'https://studentsection.xyz/flaskapi/tickets/import',
         // Optionally pass a season_code or event_date here if needed
         // e.g. { season_code: "F24" },
         {},
@@ -150,7 +151,7 @@ function ProfilePage() {
         setUcMessage((prev) => prev + ` | ${importRes.data.message}`);
       }
       // 3) (Optionally) re-fetch the user's tickets so they appear immediately on the page
-      return axios.get('http://localhost:5000/tickets/mine', { withCredentials: true });
+      return axios.get('https://studentsection.xyz/flaskapi/tickets/mine', { withCredentials: true });
     })
     .then((mineRes) => {
       // Suppose you have a state setter for the user's tickets
