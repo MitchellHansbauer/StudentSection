@@ -6,6 +6,7 @@ import os
 import uuid
 import requests
 import redis
+import bcrypt
 import stripe
 from flask_cors import CORS
 from pymongo import MongoClient
@@ -113,13 +114,16 @@ def create_user():
     if users_collection.find_one({"email": data["email"]}):
         return jsonify({"error": "User already exists"}), 409
 
+    # Hash the password before storing it
+    hashed_password = bcrypt.hashpw(data["password"].encode('utf-8'), bcrypt.gensalt())
+    data["password"] = hashed_password.decode('utf-8')  # Store as a string
+
     result = users_collection.insert_one(data)
     
     return jsonify({
         "message": "User created successfully",
         "user_id": str(result.inserted_id)
     }), 201
-
 
 # ------------------------------
 # Endpoint: POST, GET /users/login
@@ -135,15 +139,19 @@ def login():
     if not email or not password:
         return jsonify({"error": "Email and password are required"}), 400
 
-    # Look up the user by email and password
-    user = users_collection.find_one({"email": email, "password": password})
+    # Look up the user by email
+    user = users_collection.find_one({"email": email})
     if not user:
+        return jsonify({"error": "Invalid email or password"}), 401
+
+    # Verify the password
+    if not bcrypt.checkpw(password.encode('utf-8'), user["password"].encode('utf-8')):
         return jsonify({"error": "Invalid email or password"}), 401
 
     cursor = 0
     keys = r.scan(cursor=cursor, match="session:*")
     for key in keys[1]:
-        session_data=r.get(key)
+        session_data = r.get(key)
         if email in session_data:
             r.delete(key)
 
@@ -154,15 +162,13 @@ def login():
 
     return jsonify({"message": "Login successful"}), 200
 
-#Function to pull the new session for later use if need be
+#Pull the new session for later use
 def get_user_session(useremail):
     sessions=r.scan(cursor=0, match="session:*")
     for newsession in sessions[1]:
         session_data=r.get(newsession)
         if useremail in session_data:
             return newsession
-
-
 # ------------------------------
 # Endpoint: POST /logout
 # Clear the session data to log out the user.
