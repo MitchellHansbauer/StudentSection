@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Logo from '../media/StudentSectionTransparent.png';
 import Background from '../media/Cincy.jpg';
 
-const LoginPage = ({ setUser }) => {
+const HomePage = ({ user, setUser }) => {
   const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -14,10 +14,27 @@ const LoginPage = ({ setUser }) => {
   const [school, setSchool] = useState('');
   const [error, setError] = useState('');
 
+  // Check if the user is already logged in when the component loads
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/users/me', {
+          withCredentials: true,
+        });
+        setUser(response.data); // Set the user data in the parent component
+      } catch (err) {
+        console.error('No active session:', err.response?.data?.error || err.message);
+        // Do nothing, stay on the login form
+      }
+    };
+
+    checkSession();
+  }, [setUser]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-  
+
     try {
       if (isRegister) {
         // Basic checks for the truly required fields
@@ -25,7 +42,7 @@ const LoginPage = ({ setUser }) => {
           setError('Please fill in all required fields. (School is optional)');
           return;
         }
-  
+
         // 1) Register user
         await axios.post('http://localhost:5000/users/register', {
           email,
@@ -36,39 +53,30 @@ const LoginPage = ({ setUser }) => {
           // If school is blank, the backend will default it to 'public'
           School: school,
         }, { withCredentials: true });
-  
+
         // 2) Immediately log in
         await axios.post('http://localhost:5000/users/login', {
           email,
           password,
         }, { withCredentials: true });
-  
-        // 3) Fetch user info
-        const meResponse = await axios.get('http://localhost:5000/users/me', {
-          withCredentials: true,
-        });
-        setUser(meResponse.data);
-  
-        alert('Registration successful! You are now logged in.');
-  
       } else {
         // Logging in an existing user
         if (!email || !password) {
           setError('Please enter both email and password.');
           return;
         }
-  
+
         // 1) Log in
         await axios.post('http://localhost:5000/users/login', { email, password }, {
           withCredentials: true,
         });
-  
-        // 2) Fetch user info
-        const meResponse = await axios.get('http://localhost:5000/users/me', {
-          withCredentials: true,
-        });
-        setUser(meResponse.data);
       }
+
+      // 3) Fetch user info
+      const meResponse = await axios.get('http://localhost:5000/users/me', {
+        withCredentials: true,
+      });
+      setUser(meResponse.data);
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.error || 'Something went wrong.');
@@ -85,6 +93,28 @@ const LoginPage = ({ setUser }) => {
     alignItems: 'center',
   };
 
+  if (user) {
+    // Render the main content of the home page if the user is logged in
+    return (
+      <div style={pageStyle}>
+        <div className="text-center text-white">
+          <h1>Welcome, {user.email}!</h1>
+          <p>Your school: {user.school || 'Public'}</p>
+          <button
+            className="btn btn-danger"
+            onClick={async () => {
+              await axios.post('http://localhost:5000/logout', {}, { withCredentials: true });
+              setUser(null); // Clear the user state
+            }}
+          >
+            Logout
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Render the login or registration form if the user is not logged in
   return (
     <div style={pageStyle}>
       <div className="card p-4 shadow-lg" style={{ width: '400px', backgroundColor: 'rgba(255, 255, 255, 0.9)' }}>
@@ -153,7 +183,6 @@ const LoginPage = ({ setUser }) => {
                 <input
                   type="text"
                   className="form-control"
-                  // Clarify that it's optional
                   placeholder="School (optional, defaults to 'public')"
                   value={school}
                   onChange={(e) => setSchool(e.target.value)}
@@ -176,4 +205,4 @@ const LoginPage = ({ setUser }) => {
   );
 };
 
-export default LoginPage;
+export default HomePage;
