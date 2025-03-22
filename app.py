@@ -132,6 +132,16 @@ def create_user():
 # ------------------------------
 @app.route('/users/login', methods=['POST', 'GET'])
 def login():
+    # Check if the user is already logged in
+    if 'user_id' in session:
+        return jsonify({
+            "message": "User already logged in",
+            "user_id": session.get("user_id"),
+            "email": session.get("email"),
+            "school": session.get("school")
+        }), 200
+
+    # Proceed with login if no active session
     data = request.get_json()
     email = data.get("email")
     password = data.get("password")
@@ -148,6 +158,7 @@ def login():
     if not bcrypt.checkpw(password.encode('utf-8'), user["password"].encode('utf-8')):
         return jsonify({"error": "Invalid email or password"}), 401
 
+    # Clear any existing sessions for this user
     cursor = 0
     keys = r.scan(cursor=cursor, match="session:*")
     for key in keys[1]:
