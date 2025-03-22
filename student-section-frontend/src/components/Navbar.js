@@ -20,21 +20,26 @@ const Navbar = ({ user, setUser }) => {
   };
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark bg-dark position-relative">
+    <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
       <div className="container-fluid">
         {/* Logo */}
         <Link className="navbar-brand" to="/">
           <img src={Logo} alt="Student Section Logo" className="logo-placeholder" style={{ height: "40px" }} />
         </Link>
 
-        {/* Toggle Button for Mobile (Bootstrap default) */}
-        <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-          aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        {/* Toggle Button for Mobile */}
+        <button
+          className="navbar-toggler"
+          type="button"
+          onClick={() => setHamburgerOpen(!hamburgerOpen)}
+          aria-expanded={hamburgerOpen}
+          aria-label="Toggle navigation"
+        >
           <span className="navbar-toggler-icon"></span>
         </button>
 
         {/* Navbar Links */}
-        <div className="collapse navbar-collapse" id="navbarNav">
+        <div className={`collapse navbar-collapse ${hamburgerOpen ? 'show' : ''}`} id="navbarNav">
           <ul className="navbar-nav ms-auto">
             <li className="nav-item">
               <Link className="nav-link" to="/marketplace">Marketplace</Link>
@@ -55,57 +60,7 @@ const Navbar = ({ user, setUser }) => {
             </li>
           </ul>
         </div>
-
-        {/* Additional Hamburger Dropdown Menu */}
-        {/* This custom hamburger is visible on smaller screens (d-lg-none) */}
-        <div className="hamburger-dropdown d-lg-none" onClick={() => setHamburgerOpen(!hamburgerOpen)} style={{ cursor: 'pointer' }}>
-          <span style={{ fontSize: '1.8em', color: 'white' }}>☰</span>
-        </div>
       </div>
-
-      {/* Custom Dropdown Menu for the Hamburger */}
-      {hamburgerOpen && (
-        <div 
-          className="custom-dropdown-menu bg-dark" 
-          style={{
-            position: 'absolute',
-            top: '60px', // adjust based on your navbar height
-            right: '20px',
-            border: '1px solid #444',
-            borderRadius: '4px',
-            zIndex: 1050,
-            width: '150px'
-          }}
-        >
-          <ul className="list-unstyled mb-0">
-            <li>
-              <a 
-                href="/ProfilePage/Profile%20Page.html" 
-                className="dropdown-item text-white"
-                onClick={() => setHamburgerOpen(false)}
-              >
-                Profile
-              </a>
-            </li>
-            <li>
-              <Link className="dropdown-item text-white" to="/tickets" onClick={() => setHamburgerOpen(false)}>My Tickets</Link>
-            </li>
-            <li>
-              <a 
-                className="dropdown-item text-white" 
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  onLogoutClick();
-                  setHamburgerOpen(false);
-                }}
-              >
-                Log Out
-              </a>
-            </li>
-          </ul>
-        </div>
-      )}
     </nav>
   );
 };
