@@ -15,7 +15,9 @@ from bson import ObjectId
 from datetime import timedelta
 from fuzzywuzzy import fuzz
 from unidecode import unidecode
+from dateutil import parser
 from schedule_parser import parse_html_schedule
+from fuzzy_match import fuzzy_match_event
 
 app = Flask(__name__)
 app.config['SESSION_COOKIE_SECURE'] = False  # if you're on HTTP in dev
@@ -339,79 +341,6 @@ def connect_third_party_account(user_id):
 # the ticket doc with proper 'transfer' info.
 # ------------------------------
 @app.route('/tickets', methods=['POST'])
-def match_ticket():
-    data = request.get_json()
-    # Extract event info from the frontend payload
-    frontend_name = data.get('event_name')       # e.g. "Arizona State"
-    frontend_venue = data.get('venue')           # e.g. "Fifth Third Arena"
-    frontend_datetime = data.get('event_datetime')  # ISO 8601 string, e.g. "2025-03-23T19:00:00"
-
-    # Normalize the frontend strings: lower-case, strip whitespace, remove accents
-    def normalize_text(s: str) -> str:
-        if s is None: 
-            return ""
-        # Convert Unicode accents to ASCII, lower-case, and strip whitespace
-        return unidecode(s).strip().lower()
-
-    norm_name = normalize_text(frontend_name)
-    norm_venue = normalize_text(frontend_venue)
-    # Remove non-alphanumeric characters for more robust comparison (optional)
-    import re
-    norm_name = re.sub(r'\W+', '', norm_name)   # remove punctuation/special chars
-    norm_venue = re.sub(r'\W+', '', norm_venue)
-
-    # Parse the frontend datetime string to a datetime object
-    try:
-        target_dt = datetime.fromisoformat(frontend_datetime)
-    except ValueError:
-        # Fallback to dateutil.parser in case ISO format is slightly off-standard
-        target_dt = parser.parse(frontend_datetime)
-    target_date = target_dt.date()
-    target_time = target_dt.time()
-
-    # Placeholder: get events from Paciolan API (list of dicts with keys 'eventName', 'facility', 'eventDtStr')
-    paciolan_events = get_paciolan_events()  # This should call Paciolan API and return event data
-
-    best_match = None
-    best_score = 0
-    for event in paciolan_events:
-        # Normalize Paciolan event name and venue
-        event_name_norm = normalize_text(event.get('eventName', ''))
-        event_venue_norm = normalize_text(event.get('facility', ''))
-        event_name_norm = re.sub(r'\W+', '', event_name_norm)
-        event_venue_norm = re.sub(r'\W+', '', event_venue_norm)
-
-        # Parse Paciolan event date string to datetime
-        try:
-            event_dt = parser.parse(event.get('eventDtStr', ''))  # use dateutil to handle various formats
-        except Exception:
-            continue  # skip this event if date parsing fails
-
-        # Check if date and time match exactly
-        if event_dt.date() != target_date or event_dt.time() != target_time:
-            continue  # Different event date/time, skip
-
-        # Compute fuzzy similarity scores for name and venue
-        name_score = fuzz.ratio(norm_name, event_name_norm)
-        venue_score = fuzz.ratio(norm_venue, event_venue_norm)
-
-        # If both scores are high enough and combined score is the best so far, consider it a match
-        if name_score >= 90 and venue_score >= 90:
-            total_score = name_score + venue_score
-            if total_score > best_score:
-                best_score = total_score
-                best_match = event
-
-            # If it's a perfect match, we can break early
-            if best_score == 200:  # 100 + 100
-                break
-
-    if best_match:
-        return jsonify({"matched_event": best_match}), 200
-    else:
-        # No match found
-        return jsonify({"matched_event": None}), 404
-
 def post_ticket():
     if 'user_id' not in session:
         return jsonify({"error": "Not authenticated"}), 401
