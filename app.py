@@ -13,9 +13,6 @@ from pymongo import MongoClient
 from pymongo import UpdateOne
 from bson import ObjectId
 from datetime import timedelta
-from fuzzywuzzy import fuzz
-from unidecode import unidecode
-from dateutil import parser
 from schedule_parser import parse_html_schedule
 from fuzzy_match import fuzzy_match_event
 
@@ -375,12 +372,17 @@ def post_ticket():
         if not paciolan_id:
             return jsonify({"error": "User does not have a linked UC account"}), 400
 
-        # Instead of requiring event_code, we do fuzzy match using 
-        # the user-provided event_name, event_date, and venue.
+        token = get_mock_token()
+        if not token:
+            return jsonify({"error": "Unable to retrieve mock token"}), 500
+
+        # Do fuzzy match using the user-provided event_name, event_date, and venue.
         matched_event = fuzzy_match_event(
             frontend_name=data["event_name"],
             frontend_venue=data["venue"],
-            frontend_datetime=data["event_date"]  # or data.get('event_datetime')
+            frontend_datetime=data["event_date"],
+            paciolan_id=paciolan_id,
+            token= f"Bearer {token}" # Use the token from get_mock_token()
         )
         if not matched_event:
             return jsonify({"error": "Unable to find Paciolan event that matches those details"}), 404
