@@ -13,7 +13,6 @@ from pymongo import MongoClient
 from pymongo import UpdateOne
 from bson import ObjectId
 from datetime import timedelta
-from dateutil import parser
 from fuzzywuzzy import fuzz
 from unidecode import unidecode
 from schedule_parser import parse_html_schedule
@@ -340,6 +339,78 @@ def connect_third_party_account(user_id):
 # the ticket doc with proper 'transfer' info.
 # ------------------------------
 @app.route('/tickets', methods=['POST'])
+def match_ticket():
+    data = request.get_json()
+    # Extract event info from the frontend payload
+    frontend_name = data.get('event_name')       # e.g. "Arizona State"
+    frontend_venue = data.get('venue')           # e.g. "Fifth Third Arena"
+    frontend_datetime = data.get('event_datetime')  # ISO 8601 string, e.g. "2025-03-23T19:00:00"
+
+    # Normalize the frontend strings: lower-case, strip whitespace, remove accents
+    def normalize_text(s: str) -> str:
+        if s is None: 
+            return ""
+        # Convert Unicode accents to ASCII, lower-case, and strip whitespace
+        return unidecode(s).strip().lower()
+
+    norm_name = normalize_text(frontend_name)
+    norm_venue = normalize_text(frontend_venue)
+    # Remove non-alphanumeric characters for more robust comparison (optional)
+    import re
+    norm_name = re.sub(r'\W+', '', norm_name)   # remove punctuation/special chars
+    norm_venue = re.sub(r'\W+', '', norm_venue)
+
+    # Parse the frontend datetime string to a datetime object
+    try:
+        target_dt = datetime.fromisoformat(frontend_datetime)
+    except ValueError:
+        # Fallback to dateutil.parser in case ISO format is slightly off-standard
+        target_dt = parser.parse(frontend_datetime)
+    target_date = target_dt.date()
+    target_time = target_dt.time()
+
+    # Placeholder: get events from Paciolan API (list of dicts with keys 'eventName', 'facility', 'eventDtStr')
+    paciolan_events = get_paciolan_events()  # This should call Paciolan API and return event data
+
+    best_match = None
+    best_score = 0
+    for event in paciolan_events:
+        # Normalize Paciolan event name and venue
+        event_name_norm = normalize_text(event.get('eventName', ''))
+        event_venue_norm = normalize_text(event.get('facility', ''))
+        event_name_norm = re.sub(r'\W+', '', event_name_norm)
+        event_venue_norm = re.sub(r'\W+', '', event_venue_norm)
+
+        # Parse Paciolan event date string to datetime
+        try:
+            event_dt = parser.parse(event.get('eventDtStr', ''))  # use dateutil to handle various formats
+        except Exception:
+            continue  # skip this event if date parsing fails
+
+        # Check if date and time match exactly
+        if event_dt.date() != target_date or event_dt.time() != target_time:
+            continue  # Different event date/time, skip
+
+        # Compute fuzzy similarity scores for name and venue
+        name_score = fuzz.ratio(norm_name, event_name_norm)
+        venue_score = fuzz.ratio(norm_venue, event_venue_norm)
+
+        # If both scores are high enough and combined score is the best so far, consider it a match
+        if name_score >= 90 and venue_score >= 90:
+            total_score = name_score + venue_score
+            if total_score > best_score:
+                best_score = total_score
+                best_match = event
+
+            # If it's a perfect match, we can break early
+            if best_score == 200:  # 100 + 100
+                break
+
+    if best_match:
+        return jsonify({"matched_event": best_match}), 200
+    else:
+        # No match found
+        return jsonify({"matched_event": None}), 404
 
 def post_ticket():
     if 'user_id' not in session:
@@ -350,108 +421,61 @@ def post_ticket():
 
     data = request.get_json() or {}
 
-    # Validate required fields
+    # Basic validation
     required_fields = ['event_name', 'event_date', 'venue', 'price']
     for field in required_fields:
         if field not in data:
             return jsonify({"error": f"Missing field: {field}"}), 400
 
-    # Validate event_date
+    # event_date as ISO8601
     try:
-        event_date = datetime.fromisoformat(data['event_date'])
+        event_date_dt = datetime.fromisoformat(data['event_date'])
     except (ValueError, TypeError):
         return jsonify({"error": "Invalid event_date format; must be ISO-8601"}), 400
 
-    # Default school_name to "public" if none provided
     school_name = (data.get("school_name") or "").strip()
     if not school_name:
         school_name = "public"
 
-    # We'll store our final ticket document in ticket_doc.
     ticket_doc = None
 
-    # If the user says it's a UC ticket, we must verify it actually exists in Paciolan.
+    # ------------- Fuzzy matching block -------------
     if school_name.lower() == "university of cincinnati":
-        # 2) Retrieve the user's Paciolan ID
+        # user must have a Paciolan ID
         paciolan_id = user_doc.get("third_party_account", {}).get("paciolan_id")
         if not paciolan_id:
             return jsonify({"error": "User does not have a linked UC account"}), 400
 
-        season_code = data.get("season_code")
-        event_code  = data.get("event_code")  # The item code in the mock system
+        # Instead of requiring event_code, we do fuzzy match using 
+        # the user-provided event_name, event_date, and venue.
+        matched_event = fuzzy_match_event(
+            frontend_name=data["event_name"],
+            frontend_venue=data["venue"],
+            frontend_datetime=data["event_date"]  # or data.get('event_datetime')
+        )
+        if not matched_event:
+            return jsonify({"error": "Unable to find Paciolan event that matches those details"}), 404
 
-        if not (paciolan_id and season_code and event_code):
-            return jsonify({"error": "Missing paciolan_id, season_code, or event_code for UC ticket"}), 400
+        # If matched_event is found, we proceed. 
+        # For demonstration, let's say matched_event has "id" and "facility," etc.
+        # We can also do a separate retrieval with matched_event["id"] if needed.
 
-        # Get token
-        token = get_mock_token()
-        if not token:
-            return jsonify({"error": "Unable to retrieve mock token"}), 500
-
-        # Query the mock Paciolan API
-        url = f"http://localhost:3003/v2/patron/{paciolan_id}/orders/{season_code}"
-        headers = {
-            "Authorization": f"Bearer {token}",
-            "PAC-Application-ID": "TicketImporter/1.0",
-            "PAC-API-Key": "mock.api.key",
-            "PAC-Channel-Code": "mock.channel.code",
-            "PAC-Organization-ID": "OrganizationID",
-            "User-Agent": "StudentSection/v1.0",
-            "Accept": "application/json"
-        }
-        response = requests.get(url, headers=headers)
-        if response.status_code == 404:
-            return jsonify({"error": f"No tickets found for paciolan_id={paciolan_id}, season={season_code}"}), 404
-        elif response.status_code != 200:
-            return jsonify({"error": f"Mock API error: {response.status_code}"}), 502
-
-        # Parse the response
-        data_json = response.json()
-        orders = data_json.get("value", {}).get("lineItemOHVos", [])
-        # We want to see if there's an order that matches event_code. We'll also gather seat info.
-        matched_line_item = None
-        matched_event_item = None
-        matched_seat_ohvo = None
-
-        for order in orders:
-            # e.g., order["id"] might be something like "MB25:CINN:CONFB:1" or etc.
-            # but we should look at the eventOHVos inside.
-            event_ohvos = order.get("eventOHVos", [])
-            for ev in event_ohvos:
-                if ev.get("id") == event_code:
-                    # Found the matching event code in Paciolan.
-                    matched_line_item = order
-                    matched_event_item = ev
-                    # seatOHVos is an array that might hold row, seats, etc.
-                    # We'll just grab the first seat for demonstration.
-                    seat_ohvos = ev.get("seatOHVos", [])
-                    if seat_ohvos:
-                        matched_seat_ohvo = seat_ohvos[0]
-                    break
-            if matched_line_item:
-                break
-
-        if not matched_line_item or not matched_event_item:
-            return jsonify({"error": "Could not find the requested event_code in Paciolan orders."}), 404
-
-        # Now that we've found a match, we can construct the doc with the same structure.
-        # We'll do something similar to your import logic.
-        order_season = matched_line_item.get("seasonCd", season_code)
+        # Example placeholder for seat info doc:
         seat_info_doc = {
-            "level":  matched_seat_ohvo.get("level", "Unknown") if matched_seat_ohvo else "Unknown",
-            "section": matched_seat_ohvo.get("section", "Unknown") if matched_seat_ohvo else "Unknown",
-            "row":     0,  # might parse from seat_ohvo if it has row
-            "seats":   1,  # likewise, parse if you have seat count
-            "soldFor": matched_event_item.get("cost", 0),
+            "level":  "Unknown",
+            "section": "Unknown",
+            "row":     0,
+            "seats":   1,
+            "soldFor": 0,
             "marketplace": "store"
         }
 
-        # Build up the doc, including the transfer object.
+        # Build your final ticket doc
         ticket_doc = {
-            "seller_id": ObjectId(session['user_id']),
+            "seller_id": ObjectId(user_id),
             "school_name": school_name,
             "event_name": data["event_name"],
-            "event_date": event_date,
+            "event_date": event_date_dt,
             "venue": data["venue"],
             "price": data["price"],
             "currency": data.get("currency", "USD"),
@@ -464,8 +488,8 @@ def post_ticket():
                 },
                 "Seats": [
                     {
-                        "season": order_season,
-                        "event": matched_event_item.get("id", "Unknown"),
+                        "season": "TODO_SEASON_CODE",
+                        "event":  matched_event.get("id", "Unknown"),
                         "priceLevel": "1",
                         "priceType": "A",
                         "seatInfo": seat_info_doc
@@ -475,11 +499,12 @@ def post_ticket():
         }
 
     else:
+        # Non-UC tickets => skip the fuzzy match logic
         ticket_doc = {
-            "seller_id": ObjectId(session['user_id']),
+            "seller_id": ObjectId(user_id),
             "school_name": school_name,
             "event_name": data["event_name"],
-            "event_date": event_date,
+            "event_date": event_date_dt,
             "venue": data["venue"],
             "price": data["price"],
             "currency": data.get("currency", "USD"),
@@ -489,7 +514,7 @@ def post_ticket():
             "transfer": None
         }
 
-    # Insert into MongoDB
+    # Insert
     result = tickets_collection.insert_one(ticket_doc)
 
     return jsonify({

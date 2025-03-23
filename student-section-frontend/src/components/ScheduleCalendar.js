@@ -111,12 +111,14 @@ function ScheduleCalendar() {
 
   const handleListTicket = () => {
     // Navigate to the PostTicket component with event details pre-populated.
-    navigate("/postticket", { state: {
-      event_name: selectedEvent.title,
-      event_date: selectedEvent.start.toISOString(),
-      venue: selectedEvent.extendedProps.location,
-      school_name: selectedSchool
-    }});
+    navigate("/postticket", {
+      state: {
+        event_name: selectedEvent.title,                  // from the FC event
+        event_date: selectedEvent.start.toISOString(),   // ensure ISO format
+        venue: selectedEvent.extendedProps.location,     // from the FC event
+        school_name: selectedSchool                      // from the user's dropdown
+      }
+    });
     closeModal();
   };
 

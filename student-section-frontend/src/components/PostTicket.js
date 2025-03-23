@@ -5,10 +5,10 @@ import { useLocation } from "react-router-dom";
 function PostTicket() {
   const location = useLocation();
   const initialData = location.state || {};
-
+  
   const [formData, setFormData] = useState({
     event_name: initialData.event_name || "",
-    event_date: initialData.event_date || "",
+    event_date: initialData.event_date || "",   // This is already ISO
     venue: initialData.venue || "",
     school_name: initialData.school_name || "",
     price: ""
