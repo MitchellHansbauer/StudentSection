@@ -114,7 +114,8 @@ function ScheduleCalendar() {
     navigate("/postticket", { state: {
       event_name: selectedEvent.title,
       event_date: selectedEvent.start.toISOString(),
-      venue: selectedEvent.extendedProps.location
+      venue: selectedEvent.extendedProps.location,
+      school_name: selectedSchool
     }});
     closeModal();
   };

@@ -197,7 +197,7 @@ def logout():
 @app.route('/users/me', methods=['GET'])
 def get_current_user():
     if 'user_id' not in session:
-        return jsonify({"error": "Not logged in"}), 401
+        return jsonify({"error": "Not authenticated"}), 401
     
     return jsonify({
         "user_id": session.get("user_id"),
@@ -215,7 +215,7 @@ def get_current_user():
 def get_profile(user_id):
     # 1) Check if user_id is in the Flask session:
     if 'user_id' not in session:
-        return jsonify({"error": "No session found"}), 401
+        return jsonify({"error": "Not authenticated"}), 401
 
     session_user_id = session['user_id']
     if session_user_id != user_id:
@@ -272,7 +272,7 @@ def update_profile(user_id):
 def connect_third_party_account(user_id):
     # 1) Confirm session user matches the user_id
     if 'user_id' not in session or session['user_id'] != user_id:
-        return jsonify({"error": "Unauthorized"}), 403
+        return jsonify({"error": "Not authenticated"}), 403
 
     data = request.get_json()
     # Example required fields, adjust as needed
@@ -331,172 +331,169 @@ def connect_third_party_account(user_id):
 
 
 # ------------------------------
-# Endpoint: POST /tickets/import
-# Import tickets from a third-party system (e.g. Paciolan) using a user's linked account.
-# This example follows a simple flow: get the user's Paciolan ID, call the mock API,
-# parse the response, and insert the tickets into the MongoDB collection.
-# ------------------------------
-@app.route('/tickets/import', methods=['POST'])
-def import_tickets():
-    # 1) Verify user is logged in (session)
-    if 'user_id' not in session:
-        return jsonify({"error": "Not logged in"}), 401
-
-    user_id = session['user_id']
-    user_doc = users_collection.find_one({"_id": ObjectId(user_id)})
-    if not user_doc:
-        return jsonify({"error": "User not found"}), 404
-
-    # 2) Retrieve the user's Paciolan ID
-    paciolan_id = user_doc.get("third_party_account", {}).get("paciolan_id")
-    if not paciolan_id:
-        return jsonify({"error": "User does not have a linked UC account"}), 400
-
-    # 3) Parse request data. Accept an optional season_code and event_date.
-    data = request.get_json() or {}
-    season_code = data.get("season_code", "F24")
-    
-    if "event_date" in data:
-        try:
-            user_supplied_date = datetime.fromisoformat(data["event_date"])
-        except (ValueError, TypeError):
-            return jsonify({"error": "Invalid event_date format; must be ISO-8601"}), 400
-    else:
-        user_supplied_date = None
-
-    # 4) **Obtain your mock token** and safely handle error
-    token = get_mock_token()
-    if not token:
-        return jsonify({"error": "Unable to retrieve mock token"}), 500
-    
-    # 5) Call the external (mock) API using the user's paciolan_id and season_code.
-    url = f"http://localhost:3003/v2/patron/{paciolan_id}/orders/{season_code}"
-    headers = {
-        "Authorization": f"Bearer {token}",    # Use the token from get_mock_token()
-        "PAC-Application-ID": "TicketImporter/1.0",
-        "PAC-API-Key": "mock.api.key",
-        "PAC-Channel-Code": "mock.channel.code",
-        "PAC-Organization-ID": "OrganizationID",
-        "User-Agent": "StudentSection/v1.0",
-        "Accept": "application/json"
-    }
-    response = requests.get(url, headers=headers)
-
-    if response.status_code == 404:
-        return jsonify({"error": f"No tickets found for paciolan_id={paciolan_id}, season={season_code}"}), 404
-    elif response.status_code != 200:
-        return jsonify({"error": f"Mock API error: {response.status_code}"}), 502
-
-    # 6) Parse the response and build ticket documents
-    data_json = response.json()
-    orders = data_json.get("value", {}).get("lineItemOHVos", [])
-    new_tickets = []
-
-    for order in orders:
-        order_name = order.get("name", "Unknown Event")
-        order_season = order.get("seasonCd", season_code)
-        event_hvos = order.get("eventOHVos", [])
-
-        for event_item in event_hvos:
-            event_date_str = event_item.get("eventDtStr")
-            dt_obj = None
-            if event_date_str:
-                try:
-                    dt_obj = datetime.fromisoformat(event_date_str)
-                except ValueError:
-                    dt_obj = None
-
-            seat_ohvos = event_item.get("seatOHVos", [])
-            for seat_info in seat_ohvos:
-                ticket_doc = {
-                    "seller_id": ObjectId(user_id),
-                    "school_name": user_doc.get("School", "public"),
-                    "event_name": order_name,
-                    "event_date": dt_obj or user_supplied_date,
-                    "venue": seat_info.get("dispositionName", "Unknown"),
-                    "price": "0",  # Set price if available
-                    "currency": "USD",
-                    "status": "unavailable",  # or "available" if you want them open for purchase
-                    "is_transferrable": True,
-                    "created_at": datetime.utcnow(),
-                    "transfer": {
-                        "Sender": {
-                            "patronId": paciolan_id
-                        },
-                        "Seats": [
-                            {
-                                "season": order_season,
-                                "event": event_item.get("id", "Unknown"),
-                                "priceLevel": "1",
-                                "priceType": "A",
-                                "seatInfo": {
-                                    "level": seat_info.get("level", "Unknown"),
-                                    "section": seat_info.get("section", seat_info.get("dispositionName", "Unknown")),
-                                    "row": seat_info.get("row", 0),
-                                    "seats": seat_info.get("qty", 1),
-                                    "soldFor": event_item.get("cost", 0),
-                                    "marketplace": "store"
-                                }
-                            }
-                        ]
-                    }
-                }
-                new_tickets.append(ticket_doc)
-
-    # 7) Insert the ticket documents into MongoDB
-    if new_tickets:
-        tickets_collection.insert_many(new_tickets)
-        return jsonify({"message": f"Imported {len(new_tickets)} new tickets"}), 201
-
-    return jsonify({"message": "No tickets to import"}), 200
-
-
-# ------------------------------
 # Endpoint: POST /tickets
 # Create a ticket listing using schedule event details.
+# This code ensures that if the school_name is 'University of Cincinnati', we confirm
+# the requested event truly exists in the mock Paciolan system, and only then create
+# the ticket doc with proper 'transfer' info.
 # ------------------------------
 @app.route('/tickets', methods=['POST'])
 def post_ticket():
     if 'user_id' not in session:
         return jsonify({"error": "Not authenticated"}), 401
+    
+    user_id = session['user_id']
+    user_doc = users_collection.find_one({"_id": ObjectId(user_id)})
 
-    data = request.get_json()
+    data = request.get_json() or {}
 
-    # Ensure required fields are provided from the schedule event and user input.
+    # Validate required fields
     required_fields = ['event_name', 'event_date', 'venue', 'price']
     for field in required_fields:
         if field not in data:
             return jsonify({"error": f"Missing field: {field}"}), 400
 
+    # Validate event_date
     try:
-        # Expect event_date as ISO string (e.g., "2025-04-08T08:00:00")
         event_date = datetime.fromisoformat(data['event_date'])
-    except Exception as e:
-        return jsonify({"error": "Invalid event_date format"}), 400
+    except (ValueError, TypeError):
+        return jsonify({"error": "Invalid event_date format; must be ISO-8601"}), 400
 
-    # For school_name, if the schedule event is public we use "public" or the user's school if set.
-    school_name = "public"
-    if session.get("school"):
-        school_name = session["school"]
+    # Default school_name to "public" if none provided
+    school_name = (data.get("school_name") or "").strip()
+    if not school_name:
+        school_name = "public"
 
-    ticket_doc = {
-        "seller_id": ObjectId(session['user_id']),
-        "school_name": school_name,
-        "event_name": data.get("event_name", ""),
-        "event_date": event_date,
-        "venue": data.get("venue", ""),
-        "price": data['price'],
-        "currency": data.get("currency", "USD"),
-        "status": "available",
-        "is_transferrable": True,
-        "created_at": datetime.utcnow()
-    }
+    # We'll store our final ticket document in ticket_doc.
+    ticket_doc = None
 
+    # If the user says it's a UC ticket, we must verify it actually exists in Paciolan.
+    if school_name.lower() == "university of cincinnati":
+        # 2) Retrieve the user's Paciolan ID
+        paciolan_id = user_doc.get("third_party_account", {}).get("paciolan_id")
+        if not paciolan_id:
+            return jsonify({"error": "User does not have a linked UC account"}), 400
+
+        season_code = data.get("season_code")
+        event_code  = data.get("event_code")  # The item code in the mock system
+
+        if not (paciolan_id and season_code and event_code):
+            return jsonify({"error": "Missing paciolan_id, season_code, or event_code for UC ticket"}), 400
+
+        # Get token
+        token = get_mock_token()
+        if not token:
+            return jsonify({"error": "Unable to retrieve mock token"}), 500
+
+        # Query the mock Paciolan API
+        url = f"http://localhost:3003/v2/patron/{paciolan_id}/orders/{season_code}"
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "PAC-Application-ID": "TicketImporter/1.0",
+            "PAC-API-Key": "mock.api.key",
+            "PAC-Channel-Code": "mock.channel.code",
+            "PAC-Organization-ID": "OrganizationID",
+            "User-Agent": "StudentSection/v1.0",
+            "Accept": "application/json"
+        }
+        response = requests.get(url, headers=headers)
+        if response.status_code == 404:
+            return jsonify({"error": f"No tickets found for paciolan_id={paciolan_id}, season={season_code}"}), 404
+        elif response.status_code != 200:
+            return jsonify({"error": f"Mock API error: {response.status_code}"}), 502
+
+        # Parse the response
+        data_json = response.json()
+        orders = data_json.get("value", {}).get("lineItemOHVos", [])
+        # We want to see if there's an order that matches event_code. We'll also gather seat info.
+        matched_line_item = None
+        matched_event_item = None
+        matched_seat_ohvo = None
+
+        for order in orders:
+            # e.g., order["id"] might be something like "MB25:CINN:CONFB:1" or etc.
+            # but we should look at the eventOHVos inside.
+            event_ohvos = order.get("eventOHVos", [])
+            for ev in event_ohvos:
+                if ev.get("id") == event_code:
+                    # Found the matching event code in Paciolan.
+                    matched_line_item = order
+                    matched_event_item = ev
+                    # seatOHVos is an array that might hold row, seats, etc.
+                    # We'll just grab the first seat for demonstration.
+                    seat_ohvos = ev.get("seatOHVos", [])
+                    if seat_ohvos:
+                        matched_seat_ohvo = seat_ohvos[0]
+                    break
+            if matched_line_item:
+                break
+
+        if not matched_line_item or not matched_event_item:
+            return jsonify({"error": "Could not find the requested event_code in Paciolan orders."}), 404
+
+        # Now that we've found a match, we can construct the doc with the same structure.
+        # We'll do something similar to your import logic.
+        order_season = matched_line_item.get("seasonCd", season_code)
+        seat_info_doc = {
+            "level":  matched_seat_ohvo.get("level", "Unknown") if matched_seat_ohvo else "Unknown",
+            "section": matched_seat_ohvo.get("section", "Unknown") if matched_seat_ohvo else "Unknown",
+            "row":     0,  # might parse from seat_ohvo if it has row
+            "seats":   1,  # likewise, parse if you have seat count
+            "soldFor": matched_event_item.get("cost", 0),
+            "marketplace": "store"
+        }
+
+        # Build up the doc, including the transfer object.
+        ticket_doc = {
+            "seller_id": ObjectId(session['user_id']),
+            "school_name": school_name,
+            "event_name": data["event_name"],
+            "event_date": event_date,
+            "venue": data["venue"],
+            "price": data["price"],
+            "currency": data.get("currency", "USD"),
+            "status": "available",
+            "is_transferrable": True,
+            "created_at": datetime.utcnow(),
+            "transfer": {
+                "Sender": {
+                    "patronId": paciolan_id
+                },
+                "Seats": [
+                    {
+                        "season": order_season,
+                        "event": matched_event_item.get("id", "Unknown"),
+                        "priceLevel": "1",
+                        "priceType": "A",
+                        "seatInfo": seat_info_doc
+                    }
+                ]
+            }
+        }
+
+    else:
+        ticket_doc = {
+            "seller_id": ObjectId(session['user_id']),
+            "school_name": school_name,
+            "event_name": data["event_name"],
+            "event_date": event_date,
+            "venue": data["venue"],
+            "price": data["price"],
+            "currency": data.get("currency", "USD"),
+            "status": "available",
+            "is_transferrable": True,
+            "created_at": datetime.utcnow(),
+            "transfer": None
+        }
+
+    # Insert into MongoDB
     result = tickets_collection.insert_one(ticket_doc)
+
     return jsonify({
-        "message": "Ticket listed successfully",
-        "ticket_id": str(result.inserted_id)
+        "message": "Ticket created successfully",
+        "ticket_id": str(result.inserted_id),
     }), 201
+
 
 # ------------------------------
 # Endpoint: GET /tickets
@@ -509,7 +506,7 @@ def get_my_tickets():
     Uses session-based authentication.
     """
     if 'user_id' not in session:
-        return jsonify({"error": "Not logged in"}), 401
+        return jsonify({"error": "Not authenticated"}), 401
 
     user_id = session['user_id']
     # Query all tickets where seller_id matches the user's ObjectId

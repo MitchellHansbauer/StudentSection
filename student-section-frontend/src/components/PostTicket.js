@@ -10,6 +10,7 @@ function PostTicket() {
     event_name: initialData.event_name || "",
     event_date: initialData.event_date || "",
     venue: initialData.venue || "",
+    school_name: initialData.school_name || "",
     price: ""
   });
   const [message, setMessage] = useState("");
