@@ -39,8 +39,6 @@ def generate_session_id():
 # Create and initialize the Flask-Session object AFTER `app` has been configured
 server_session = Session(app)
 
-# Stripe Integration
-os.environ["STRIPE_SECRET_KEY"] = "sk_test_51Qowe4R6XyVnHR5eZpehxe32nBhRjciGkrbojz4gV8DbbqLUtQl0RrfOso2Uc1Uq4G0SQTGSIFKdYuBPussu2Uap00mq5IVAwo"
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 
 # MongoDB connection
