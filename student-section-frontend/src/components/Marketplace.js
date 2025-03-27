@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 function Marketplace() {
   const [listings, setListings] = useState([]);
   const [message, setMessage] = useState('');
-
-  const userId = 2; // Replace with actual user ID
+  const navigate = useNavigate(); // hook to navigate programmatically
 
   useEffect(() => {
     fetchListings();
@@ -17,19 +17,12 @@ function Marketplace() {
       .catch(err => console.error(err));
   };
 
+  // Instead of making a direct purchase request, navigate to the checkout page
   const handlePurchase = (listingId) => {
-    axios.post('http://localhost:5000/transactions/purchase', {
-      listing_id: listingId,
-      buyer_id: userId,
-    })
-    .then(res => {
-      setMessage(res.data.message);
-      fetchListings(); // Refresh listings
-    })
-    .catch(error => {
-      setMessage(error.response.data.error);
-      console.error(error);
-    });
+    // Update ticket record in database via API call
+    // axios.post(`http://localhost:5000/listings/${listingId}/purchase`, {}, { withCredentials: true })
+    // payment intent created and added in frontend so we don't store it in the backend
+    navigate(`/checkout/${listingId}`);
   };
 
   return (

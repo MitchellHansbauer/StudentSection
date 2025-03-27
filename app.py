@@ -213,24 +213,30 @@ def get_current_user():
 # ------------------------------
 @app.route('/users/<string:user_id>/profile', methods=['GET'])
 def get_profile(user_id):
-    # 1) Check if user_id is in the Flask session:
     if 'user_id' not in session:
-        return jsonify({"error": "Not authenticated"}), 401
+        return jsonify({"error": "No session found"}), 401
 
     session_user_id = session['user_id']
-    if session_user_id != user_id:
-        return jsonify({"error": "Unauthorized - cannot view another user's profile"}), 403
 
-    # 2) Lookup user by session_user_id in MongoDB
-    user_doc = users_collection.find_one({"_id": ObjectId(session_user_id)})
-    if not user_doc:
-        return jsonify({"error": "User not found"}), 404
+    # If the URL user_id == session user, return the full profile
+    if session_user_id == user_id:
+        user_doc = users_collection.find_one({"_id": ObjectId(session_user_id)})
+        if not user_doc:
+            return jsonify({"error": "User not found"}), 404
 
-    # 3) Clean up sensitive fields
-    user_doc['_id'] = str(user_doc['_id'])
-    user_doc.pop('password', None)
+        user_doc['_id'] = str(user_doc['_id'])
+        user_doc.pop('password', None)
+        return jsonify({"profile": user_doc}), 200
 
-    return jsonify({"profile": user_doc}), 200
+    else:
+        # If the URL user_id != session user, return only email
+        user_doc = users_collection.find_one({"_id": ObjectId(user_id)})
+        if not user_doc:
+            return jsonify({"error": "User not found"}), 404
+
+        # Return only the user’s email
+        limited_profile = {"email": user_doc.get("email", None)}
+        return jsonify({"profile": limited_profile}), 200
 
 
 # ------------------------------
@@ -587,7 +593,7 @@ def purchase_ticket(ticket_id):
             {"$set": {"status": "available"}, "$unset": {"buyer_id": "", "payment_intent_id": ""}}
         )
         return jsonify({"error": "Failed to capture payment", "details": str(e)}), 500
-
+  
     # Update ticket as sold and save transfer info
     tickets_collection.update_one(
         {"_id": ObjectId(ticket_id)},

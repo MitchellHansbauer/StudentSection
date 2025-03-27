@@ -8,6 +8,7 @@ import Navbar from "./components/Navbar";
 import UploadSchedule from "./components/UploadSchedule";
 import ScheduleCalendar from "./components/ScheduleCalendar";
 import PostTicket from "./components/PostTicket";
+import CheckoutForm from "./components/CheckoutForm"; // Import CheckoutForm
 
 function App() {
   const [user, setUser] = useState(null);
@@ -35,6 +36,7 @@ function App() {
               <Route path="/uploadschedule" element={<UploadSchedule />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/postticket" element={<PostTicket />} />
+              <Route path="/checkout/:ticketId" element={<CheckoutForm />} />
               <Route path="/" element={<ScheduleCalendar />} />
               <Route path="*" element={<Navigate to="/" />} />
             </>
