@@ -51,6 +51,15 @@ users_collection = ssdb['users']
 tickets_collection = ssdb['tickets']
 apilogs_collection = ssdb['apilogs']
 
+# Mock API base URL for Paciolan
+# --- Configuration based on Mockoon config ---
+MOCK_API_BASE_URL = "http://localhost:3003"
+DISTRIBUTOR_CODE = "SS"
+USER_AGENT = "StudentSection/v1.0"
+PAC_CHANNEL_CODE = "mock.channel.code"
+PAC_APP_ID = "application.id"
+PAC_API_KEY = "mock.api.key"
+
 MOCK_API_BASE_URL = "http://localhost:3003"
 
 def log_mongo_debug(level: str, message: str, extra: dict = None):
@@ -88,6 +97,75 @@ def get_mock_token():
         return response.json().get("accessToken")
     return None
 
+def get_auth_token():
+    token = get_mock_token()  # Already defined in your app.py
+    return f"Bearer {token}" if token else None
+
+def generate_request_id():
+    return str(uuid.uuid4())
+
+def transfer_ticket_initialize(ticket, buyer):
+    """
+    Initiate the ticket transfer by calling the mock Paciolan transfer endpoint.
+    The payload is constructed from the ticket's stored transfer data and buyer details.
+    """
+    payload = {
+        "transferRequests": [
+            {
+                "Sender": ticket.get("transfer", {}).get("Sender", {}),
+                "Recipient": {
+                    # Update these fields with actual buyer info if available
+                    "phone": buyer.get("phone"),
+                    "email": buyer.get("email"),
+                    "recipientFirstName": buyer.get("first_name"),
+                    "recipientLastName": buyer.get("last_name")
+                },
+                "Seats": ticket.get("transfer", {}).get("Seats", [])
+            }
+        ]
+    }
+    url = f"{MOCK_API_BASE_URL}/v1/tickets/transfer?distributorCode={DISTRIBUTOR_CODE}"
+    headers = {
+        "User-Agent": USER_AGENT,
+        "Authorization": get_auth_token(),
+        "PAC-Channel-Code": PAC_CHANNEL_CODE,
+        "PAC-Application-ID": PAC_APP_ID,
+        "PAC-API-Key": PAC_API_KEY,
+        "Request-ID": generate_request_id(),
+        "Content-Type": "application/json"
+    }
+    response = requests.post(url, json=payload, headers=headers)
+    if response.status_code == 200:
+        data = response.json()
+        # Expected fields: transferId and url as defined in the mock response
+        return True, data.get("transferId"), data.get("url")
+    else:
+        # Optionally, log response details for debugging
+        return False, None, None
+
+def transfer_ticket_accept(transfer_id):
+    """
+    Confirm the ticket transfer by calling the mock Paciolan accept endpoint.
+    """
+    payload = {"transferId": transfer_id}
+    url = f"{MOCK_API_BASE_URL}/v1/tickets/transfer/accept?distributorCode={DISTRIBUTOR_CODE}"
+    headers = {
+        "User-Agent": USER_AGENT,
+        "Authorization": get_auth_token(),
+        "PAC-Channel-Code": PAC_CHANNEL_CODE,
+        "PAC-Application-ID": PAC_APP_ID,
+        "PAC-API-Key": PAC_API_KEY,
+        "Request-ID": generate_request_id(),
+        "Content-Type": "application/json"
+    }
+    response = requests.post(url, json=payload, headers=headers)
+    if response.status_code == 200:
+        data = response.json()
+        # Expected fields: transferId and confirmationCd from the mock response
+        return True, data.get("transferId"), data.get("confirmationCd")
+    else:
+        return False, None, None
+
 # ------------------------------
 # Endpoint: POST /users/register
 # Create a new user in MongoDB with email, password, and optional school name.
@@ -124,6 +202,7 @@ def create_user():
         "message": "User created successfully",
         "user_id": str(result.inserted_id)
     }), 201
+
 
 # ------------------------------
 # Endpoint: POST, GET /users/login
@@ -180,6 +259,8 @@ def get_user_session(useremail):
         session_data=r.get(newsession)
         if useremail in session_data:
             return newsession
+        
+
 # ------------------------------
 # Endpoint: POST /logout
 # Clear the session data to log out the user.
@@ -287,7 +368,7 @@ def connect_third_party_account(user_id):
         if field not in data:
             return jsonify({"error": f"Missing field: {field}"}), 400
 
-    # 2) Get a mock token if your endpoint requires it (UC Does)
+    # 2) Get a mock token
     mock_token = get_mock_token()
 
     # 3) Build your GET request
@@ -524,7 +605,7 @@ def list_tickets():
 
 # ------------------------------
 # Endpoint: POST /tickets/<ticket_id>/purchase
-# Purchase a ticket – places a Stripe hold and (via placeholder) transfers the ticket.
+# Purchase a ticket – marks the ticket as pending and calls the transfer initialization endpoint.
 # ------------------------------
 @app.route('/tickets/<ticket_id>/purchase', methods=['POST'])
 def purchase_ticket(ticket_id):
@@ -540,70 +621,77 @@ def purchase_ticket(ticket_id):
     if str(ticket.get("seller_id")) == buyer_id:
         return jsonify({"error": "Cannot purchase your own ticket"}), 400
 
-    try:
-        # Convert ticket price to cents (Stripe uses the smallest currency unit)
-        amount = int(float(ticket["price"]) * 100)
-        payment_intent = stripe.PaymentIntent.create(
-            amount=amount,
-            currency=ticket.get("currency", "usd"),
-            capture_method="manual",  # Use manual capture for hold mechanism
-            metadata={
-                "ticket_id": ticket_id,
-                "seller_id": str(ticket.get("seller_id")),
-                "buyer_id": buyer_id
-            }
-        )
-    except Exception as e:
-        return jsonify({"error": "Stripe PaymentIntent creation failed", "details": str(e)}), 500
-
-    # Mark the ticket as pending to prevent double-sale and record the buyer and payment intent
+    # Mark the ticket as pending to prevent a double sale
     update_result = tickets_collection.update_one(
         {"_id": ObjectId(ticket_id), "status": "available"},
         {"$set": {
             "status": "pending",
-            "buyer_id": ObjectId(buyer_id),
-            "payment_intent_id": payment_intent.id
+            "buyer_id": ObjectId(buyer_id)
         }}
     )
     if update_result.modified_count != 1:
         return jsonify({"error": "Ticket purchase could not be initiated; ticket may have been updated"}), 409
 
-    # Placeholder: simulate ticket transfer via Paciolan
-    def transfer_ticket_placeholder(ticket):
-        # Future integration: call the Paciolan API to transfer the ticket
-        # For now, assume success and return dummy values.
-        return True, "dummy_transfer_id", "dummy_transfer_url"
-
-    success, transfer_id, transfer_url = transfer_ticket_placeholder(ticket)
+    # Dummy buyer details; replace with real data from your user profile if available.
+    buyer = {
+        "email": "buyer@example.com",
+        "first_name": "BuyerFirstName",
+        "last_name": "BuyerLastName",
+        "phone": None
+    }
+    success, transfer_id, transfer_url = transfer_ticket_initialize(ticket, buyer)
     if not success:
-        stripe.PaymentIntent.cancel(payment_intent.id)
-        tickets_collection.update_one(
-            {"_id": ObjectId(ticket_id)},
-            {"$set": {"status": "available"}, "$unset": {"buyer_id": "", "payment_intent_id": ""}}
-        )
-        return jsonify({"error": "Ticket transfer failed via Paciolan"}), 500
+        return jsonify({"error": "Ticket transfer initialization failed"}), 500
 
-    # Capture the payment (finalize the hold)
-    try:
-        stripe.PaymentIntent.capture(payment_intent.id)
-    except Exception as e:
-        stripe.PaymentIntent.cancel(payment_intent.id)
-        tickets_collection.update_one(
-            {"_id": ObjectId(ticket_id)},
-            {"$set": {"status": "available"}, "$unset": {"buyer_id": "", "payment_intent_id": ""}}
-        )
-        return jsonify({"error": "Failed to capture payment", "details": str(e)}), 500
-  
-    # Update ticket as sold and save transfer info
+    # Save the transfer details in the ticket document
     tickets_collection.update_one(
         {"_id": ObjectId(ticket_id)},
         {"$set": {
-            "status": "sold",
-            "transfer_id": transfer_id,
-            "transfer_url": transfer_url
+            "transfer.transferId": transfer_id,
+            "transfer.url": transfer_url
         }}
     )
-    return jsonify({"message": "Purchase successful, ticket transferred", "ticket_id": ticket_id}), 200
+    return jsonify({"message": "Ticket purchase initiated", "transferUrl": transfer_url})
+
+# ------------------------------
+# Endpoint: POST /tickets/<ticket_id>/purchase/confirm
+# Confirm a ticket purchase by accepting the transfer via the mock Paciolan API.
+# ------------------------------
+@app.route('/tickets/<ticket_id>/purchase/confirm', methods=['POST'])
+def confirm_ticket_purchase(ticket_id):
+    if 'user_id' not in session:
+        return jsonify({"error": "Not authenticated"}), 401
+
+    user_id = session['user_id']
+    ticket = tickets_collection.find_one({"_id": ObjectId(ticket_id)})
+    if not ticket:
+        return jsonify({"error": "Ticket not found"}), 404
+    if ticket.get("status") != "pending":
+        return jsonify({"error": "Ticket is not pending"}), 400
+    if str(ticket.get("seller_id")) != user_id:
+        return jsonify({"error": "Ticket is not pending for this user"}), 400
+
+    transfer_info = ticket.get("transfer", {})
+    transfer_id = transfer_info.get("transferId")
+    if not transfer_id:
+        return jsonify({"error": "No transfer information found"}), 400
+
+    success, confirmed_transfer_id, confirmationCd = transfer_ticket_accept(transfer_id)
+    if not success:
+        return jsonify({"error": "Ticket transfer confirmation failed"}), 500
+
+    # Update ticket status to 'sold' and record the confirmation code
+    finalize_result = tickets_collection.update_one(
+        {"_id": ObjectId(ticket_id), "status": "pending"},
+        {"$set": {
+            "status": "sold",
+            "transfer.confirmationCd": confirmationCd
+        }}
+    )
+    if finalize_result.modified_count != 1:
+        return jsonify({"error": "Ticket purchase could not be finalized; ticket may have been updated"}), 409
+
+    return jsonify({"message": "Ticket purchase confirmed", "confirmationCd": confirmationCd})
 
 
 # ------------------------------
