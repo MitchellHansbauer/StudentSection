@@ -7,7 +7,7 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-const stripePromise = loadStripe('pk_test_YOUR_PUBLISHABLE_KEY');
+const stripePromise = loadStripe('pk_test_51Qowe4R6XyVnHR5e9hSvN1crBUTZw2kQaP1sCSF8L9qZTpmrlUZOuChucDW5I6RoVBbDkcePdbP6ILWNosvUQ42A00j9o0t7kN');
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

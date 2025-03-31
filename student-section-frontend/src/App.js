@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "./components/Login";
 import axios from "axios";
-import TicketsList from "./components/TicketsList";
+import Marketplace from "./components/Marketplace";
 import ProfilePage from "./components/ProfilePage";
 import Navbar from "./components/Navbar";
 import UploadSchedule from "./components/UploadSchedule";
@@ -32,7 +32,7 @@ function App() {
         <Routes>
           {user ? (
             <>
-              <Route path="/marketplace" element={<TicketsList />} />
+              <Route path="/marketplace" element={<Marketplace />} />
               <Route path="/uploadschedule" element={<UploadSchedule />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/postticket" element={<PostTicket />} />

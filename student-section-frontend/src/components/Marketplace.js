@@ -5,43 +5,29 @@ import { useNavigate } from 'react-router-dom';
 function Marketplace() {
   const [listings, setListings] = useState([]);
   const [message, setMessage] = useState('');
-  const navigate = useNavigate(); // hook to navigate programmatically
+  const navigate = useNavigate();
 
   useEffect(() => {
-    fetchListings();
+    // Fetch available tickets from backend
+    axios.get('http://localhost:5000/tickets')
+      .then(res => setListings(res.data.tickets))
+      .catch(err => console.error(err));
   }, []);
 
-  const fetchListings = () => {
-    axios
-      .get('http://localhost:5000/listings')
-      .then((res) => setListings(res.data.listings))
-      .catch((err) => console.error(err));
-  };
-
-  // Initiate purchase on a listing and then redirect to the checkout page
-  const handlePurchase = async (listingId, sellerId) => {
-    setMessage(''); // clear any previous message
+  const handlePurchase = async (ticketId, sellerId) => {
+    setMessage('');
     try {
-      // 1. Get current user (buyer) info
       const buyerRes = await axios.get('http://localhost:5000/users/me', { withCredentials: true });
       const buyerData = buyerRes.data;
       if (!buyerData || !buyerData.email) {
         throw new Error('Please log in to purchase tickets.');
       }
-      // 2. Get the seller's email (public profile info)
       const sellerRes = await axios.get(`http://localhost:5000/users/${sellerId}/profile`, { withCredentials: true });
-      const sellerData = sellerRes.data;
-      const sellerEmail = sellerData.profile?.email;
-      console.log(`Buyer: ${buyerData.email}, Seller: ${sellerEmail}`); 
-
-      // 3. Mark the ticket as pending by calling the purchase endpoint
-      await axios.post(`http://localhost:5000/tickets/${listingId}/purchase`, {}, { withCredentials: true });
-      // If successful, the ticket is now pending (reserved for this buyer)
-
-      // 4. Redirect to checkout page to complete payment
-      navigate(`/checkout/${listingId}`);
+      // (Optional: we could use sellerRes.data.profile.email if needed)
+      
+      await axios.post(`http://localhost:5000/tickets/${ticketId}/purchase`, {}, { withCredentials: true });
+      navigate(`/checkout/${ticketId}`);  // Redirect to checkout page for this ticket
     } catch (err) {
-      console.error(err);
       const errorMsg = err.response?.data?.error || err.message || 'Failed to initiate purchase.';
       setMessage(errorMsg);
     }
@@ -57,26 +43,21 @@ function Marketplace() {
         <table>
           <thead>
             <tr>
-              <th>Event</th>
-              <th>Section</th>
-              <th>Row</th>
-              <th>Seat</th>
-              <th>Price</th>
-              <th>Seller</th>
-              <th>Action</th>
+              <th>Event</th><th>Section</th><th>Row</th>
+              <th>Seat</th><th>Price</th><th>Seller</th><th>Action</th>
             </tr>
           </thead>
           <tbody>
-            {listings.map((listing) => (
-              <tr key={listing.listing_id}>
+            {listings.map(listing => (
+              <tr key={listing.ticket_id}>
                 <td>{listing.event_name}</td>
                 <td>{listing.section}</td>
                 <td>{listing.row}</td>
-                <td>{listing.seat_number}</td>
-                <td>${listing.price.toFixed(2)}</td>
-                <td>{listing.seller_name}</td>
+                <td>{listing.seat}</td>
+                <td>${Number(listing.price).toFixed(2)}</td>
+                <td>{listing.seller_id}</td>
                 <td>
-                  <button onClick={() => handlePurchase(listing.listing_id, listing.seller_id)}>
+                  <button onClick={() => handlePurchase(listing.ticket_id, listing.seller_id)}>
                     Buy Ticket
                   </button>
                 </td>
