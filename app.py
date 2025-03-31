@@ -138,10 +138,15 @@ def transfer_ticket_initialize(ticket, buyer):
     if response.status_code == 200:
         data = response.json()
         # Expected fields: transferId and url as defined in the mock response
-        return True, data.get("transferId"), data.get("url")
+        return True, data.get("transferId"), data.get("url"), data.get("confirmationCd")
     else:
         # Optionally, log response details for debugging
         return False, None, None
+
+def transfer_ticket_cancel(transfer_id):
+    """
+    Cancel the ticket transfer by calling the mock Paciolan cancel endpoint.
+    """
 
 def transfer_ticket_accept(transfer_id):
     """
@@ -556,7 +561,12 @@ def get_my_tickets():
 
     user_id = session['user_id']
     # Query all tickets where seller_id matches the user's ObjectId
-    tickets_cursor = tickets_collection.find({"seller_id": ObjectId(user_id)})
+    tickets_cursor = tickets_collection.find({
+        "$or": [
+            {"seller_id": ObjectId(user_id)},
+            {"buyer_id": ObjectId(user_id)}
+        ]
+    })
 
     # Convert the cursor into a list of dictionaries we can JSON-ify
     user_tickets = []
@@ -642,13 +652,8 @@ def purchase_ticket(ticket_id):
     }
 
     # Call the Paciolan API to initiate the ticket transfer
-    success, transfer_id, transfer_url = transfer_ticket_initialize(ticket, buyer_info)
-    if not success or not transfer_id or not transfer_url:
-        # Transfer initialization failed; revert ticket to available status
-        tickets_collection.update_one(
-            {"_id": ObjectId(ticket_id), "status": "pending"},
-            {"$set": {"status": "available"}, "$unset": {"buyer_id": ""}}
-        )
+    success, transfer_id, transfer_url, confirmationCd = transfer_ticket_initialize(ticket, buyer_info)
+    if not success or not transfer_id or not transfer_url or not confirmationCd:
         return jsonify({"error": "Ticket transfer initialization failed"}), 500
 
     # Store transfer details in the ticket document for later confirmation
@@ -656,7 +661,8 @@ def purchase_ticket(ticket_id):
         {"_id": ObjectId(ticket_id)},
         {"$set": {
             "transfer.transferId": transfer_id,
-            "transfer.url": transfer_url
+            "transfer.url": transfer_url,
+            "transfer.confirmationCd": confirmationCd
         }}
     )
     return jsonify({"message": "Ticket purchase initiated", "transferUrl": transfer_url}), 200
@@ -716,11 +722,17 @@ def ticket_purchase_intent(ticket_id):
         {"_id": ObjectId(ticket_id)},
         {"$set": {
             "transaction_id": intent.id,
-            "payment_status": intent.status,        # e.g. "requires_payment_method"
             "payment_timestamp": datetime.utcnow()  # record when payment was initiated
         }}
     )
     return jsonify({"client_secret": intent.client_secret}), 200
+
+
+# ------------------------------
+# Endpoint: DELETE /tickets/<ticket_id>/purchase
+# Cancel a pending ticket purchase and revert the ticket status to available.
+# ------------------------------
+
 
 # ------------------------------
 # Endpoint: POST /tickets/<ticket_id>/purchase/confirm
