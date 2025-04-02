@@ -272,6 +272,8 @@ def login():
     session['user_id'] = str(user["_id"])
     session['email'] = user["email"]
     session['school'] = user.get("School")
+    session['role'] = user.get("Role", "public")
+
 
     return jsonify({"message": "Login successful"}), 200
 
@@ -306,7 +308,8 @@ def get_current_user():
     return jsonify({
         "user_id": session.get("user_id"),
         "email": session.get("email"),
-        "school": session.get("school")
+        "school": session.get("school"),
+        "role": session.get("role")
     }), 200
 
 
@@ -443,27 +446,24 @@ def connect_third_party_account(user_id):
 # ------------------------------
 # Endpoint: POST /tickets
 # Create a ticket listing using schedule event details.
-# This code ensures that if the school_name is 'University of Cincinnati', we confirm
-# the requested event truly exists in the mock Paciolan system, and only then create
+# confirm the requested event truly exists in the mock Paciolan system, and only then create
 # the ticket doc with proper 'transfer' info.
 # ------------------------------
 @app.route('/tickets', methods=['POST'])
 def post_ticket():
     if 'user_id' not in session:
         return jsonify({"error": "Not authenticated"}), 401
-    
+
     user_id = session['user_id']
     user_doc = users_collection.find_one({"_id": ObjectId(user_id)})
-
     data = request.get_json() or {}
 
-    # Basic validation
+    # Basic validation for UC tickets
     required_fields = ['event_name', 'event_date', 'venue', 'price']
     for field in required_fields:
         if field not in data:
             return jsonify({"error": f"Missing field: {field}"}), 400
 
-    # event_date as ISO8601
     try:
         event_date_dt = datetime.fromisoformat(data['event_date'])
     except (ValueError, TypeError):
@@ -473,94 +473,131 @@ def post_ticket():
     if not school_name:
         school_name = "public"
 
-    ticket_doc = None
+    # This endpoint only handles University of Cincinnati tickets.
+    if school_name.lower() != "university of cincinnati":
+        return jsonify({
+            "error": "This endpoint is only for University of Cincinnati events. For public events, please use the /Attend endpoint."
+        }), 400
 
-    # ------------- Fuzzy matching block -------------
-    if school_name.lower() == "university of cincinnati":
-        # user must have a Paciolan ID
-        paciolan_id = user_doc.get("third_party_account", {}).get("paciolan_id")
-        if not paciolan_id:
-            return jsonify({"error": "User does not have a linked UC account"}), 400
+    # Check if a ticket already exists for this seller and event.
+    existing_ticket = tickets_collection.find_one({
+        "seller_id": ObjectId(user_id),
+        "event_name": data["event_name"]
+    })
+    if existing_ticket:
+        return jsonify({"error": "Ticket for this event has already been posted by this user"}), 409
 
-        token = get_mock_token()
-        if not token:
-            return jsonify({"error": "Unable to retrieve mock token"}), 500
+    # UC-specific logic: ensure user has a Paciolan ID and perform fuzzy match.
+    paciolan_id = user_doc.get("third_party_account", {}).get("paciolan_id")
+    if not paciolan_id:
+        return jsonify({"error": "User does not have a linked UC account"}), 400
 
-        # Do fuzzy match using the user-provided event_name, event_date, and venue.
-        matched_event = fuzzy_match_event(
-            frontend_name=data["event_name"],
-            frontend_venue=data["venue"],
-            frontend_datetime=data["event_date"],
-            paciolan_id=paciolan_id,
-            token= f"Bearer {token}" # Use the token from get_mock_token()
-        )
-        if not matched_event:
-            return jsonify({"error": "Unable to find Paciolan event that matches those details"}), 404
+    token = get_mock_token()
+    if not token:
+        return jsonify({"error": "Unable to retrieve mock token"}), 500
 
-        # If matched_event is found, we proceed. 
-        # For demonstration, let's say matched_event has "id" and "facility," etc.
-        # We can also do a separate retrieval with matched_event["id"] if needed.
+    matched_event = fuzzy_match_event(
+        frontend_name=data["event_name"],
+        frontend_venue=data["venue"],
+        frontend_datetime=data["event_date"],
+        paciolan_id=paciolan_id,
+        token=f"Bearer {token}"
+    )
+    if not matched_event:
+        return jsonify({"error": "Unable to find Paciolan event that matches those details"}), 404
 
-        # Example placeholder for seat info doc:
-        seat_info_doc = {
-            "level":  "Unknown",
-            "section": "Unknown",
-            "row":     0,
-            "seats":   1,
-            "soldFor": 0,
-            "marketplace": "store"
+    # Example placeholder for seat info document.
+    seat_info_doc = {
+        "level": "Unknown",
+        "section": "Unknown",
+        "row": 0,
+        "seats": 1,
+        "soldFor": 0,
+        "marketplace": "store"
+    }
+
+    ticket_doc = {
+        "seller_id": ObjectId(user_id),
+        "school_name": school_name,
+        "event_name": data["event_name"],
+        "event_date": event_date_dt,
+        "venue": data["venue"],
+        "price": data["price"],
+        "currency": data.get("currency", "USD"),
+        "status": "available",
+        "is_transferrable": True,
+        "created_at": datetime.utcnow(),
+        "transfer": {
+            "Sender": {"patronId": paciolan_id},
+            "Seats": [{
+                "season": "TODO_SEASON_CODE",
+                "event": matched_event.get("id", "Unknown"),
+                "priceLevel": "1",
+                "priceType": "A",
+                "seatInfo": seat_info_doc
+            }]
         }
+    }
 
-        # Build your final ticket doc
-        ticket_doc = {
-            "seller_id": ObjectId(user_id),
-            "school_name": school_name,
-            "event_name": data["event_name"],
-            "event_date": event_date_dt,
-            "venue": data["venue"],
-            "price": data["price"],
-            "currency": data.get("currency", "USD"),
-            "status": "available",
-            "is_transferrable": True,
-            "created_at": datetime.utcnow(),
-            "transfer": {
-                "Sender": {
-                    "patronId": paciolan_id
-                },
-                "Seats": [
-                    {
-                        "season": "TODO_SEASON_CODE",
-                        "event":  matched_event.get("id", "Unknown"),
-                        "priceLevel": "1",
-                        "priceType": "A",
-                        "seatInfo": seat_info_doc
-                    }
-                ]
-            }
-        }
-
-    else:
-        # Non-UC tickets => skip the fuzzy match logic
-        ticket_doc = {
-            "seller_id": ObjectId(user_id),
-            "school_name": school_name,
-            "event_name": data["event_name"],
-            "event_date": event_date_dt,
-            "venue": data["venue"],
-            "price": data["price"],
-            "currency": data.get("currency", "USD"),
-            "status": "available",
-            "is_transferrable": True,
-            "created_at": datetime.utcnow(),
-            "transfer": None
-        }
-
-    # Insert
     result = tickets_collection.insert_one(ticket_doc)
-
     return jsonify({
         "message": "Ticket created successfully",
         "ticket_id": str(result.inserted_id),
+    }), 201
+
+
+# ------------------------------
+# Endpoint: POST /Attend
+# Create a new attendance record for a user.
+# ------------------------------
+@app.route('/Attend', methods=['POST'])
+def create_attendance():
+    if 'user_id' not in session:
+        return jsonify({"error": "Not authenticated"}), 401
+
+    user_id = session['user_id']
+    data = request.get_json() or {}
+
+    # Basic validation for attendance/public events.
+    required_fields = ['event_name', 'event_date', 'venue']
+    for field in required_fields:
+        if field not in data:
+            return jsonify({"error": f"Missing field: {field}"}), 400
+
+    try:
+        event_date_dt = datetime.fromisoformat(data['event_date'])
+    except (ValueError, TypeError):
+        return jsonify({"error": "Invalid event_date format; must be ISO-8601"}), 400
+
+    school_name = (data.get("school_name") or "").strip()
+    if not school_name:
+        school_name = "public"
+
+    # This endpoint only handles public events.
+    if school_name.lower() != "public":
+        return jsonify({"error": "This endpoint only handles public events"}), 400
+
+    # Check if an attendance record already exists for this attendee and event.
+    existing_attendance = tickets_collection.find_one({
+        "attendee_id": ObjectId(user_id),
+        "event_name": data["event_name"]
+    })
+    if existing_attendance:
+        return jsonify({"error": "Attendance for this event has already been recorded for this user"}), 409
+
+    attendance_doc = {
+        "attendee_id": ObjectId(user_id),
+        "school_name": school_name,
+        "event_name": data["event_name"],
+        "event_date": event_date_dt,
+        "venue": data["venue"],
+        "created_at": datetime.utcnow()
+    }
+
+    result = tickets_collection.insert_one(attendance_doc)
+    return jsonify({
+        "message": "Attendance record created successfully",
+        "attendance_id": str(result.inserted_id)
     }), 201
 
 
@@ -856,13 +893,19 @@ def confirm_ticket_purchase(ticket_id):
 
     return jsonify({"message": "Ticket purchase confirmed", "confirmationCode": confirmation_code}), 200
 
+
 # ------------------------------
 # Endpoint: POST /schedule/upload
 # Upload a schedule from an HTML file, a URL, or a manually created schedule.
 # Ensures that year and event_type are present; school_name is now optional (Defaults to "Public").
+# Only an admin user can upload schedules. The schedule is also associated with the user_id from the session.
 # ------------------------------
 @app.route('/schedule/upload', methods=['POST'])
 def upload_schedule():
+    # Ensure user is authenticated and has admin role
+    if 'user_id' not in session:
+        return jsonify({"error": "Not authenticated"}), 401
+
     log_mongo_debug(
         level="INFO",
         message="upload_schedule endpoint invoked",
@@ -925,6 +968,7 @@ def upload_schedule():
         elif 'custom_schedule' in data:
             raw_html = data['custom_schedule']
             schedule_data = parse_html_schedule(raw_html)
+
             log_mongo_debug(
                 level="DEBUG",
                 message="Parsed HTML schedule from custom_schedule",
@@ -970,6 +1014,9 @@ def upload_schedule():
 
         # Store event_type at the schedule level
         schedule_data["event_type"] = event_type
+
+        # Associate the schedule with the current user
+        schedule_data["user_id"] = session["user_id"]
 
         # Date parsing logic (still uses year)
         current_year = int(year)
@@ -1036,6 +1083,7 @@ def upload_schedule():
             extra={"error": str(e)}
         )
         return jsonify({"error": "An unexpected error occurred"}), 500
+
 
 # ------------------------------
 # Endpoint: GET /schedule/all

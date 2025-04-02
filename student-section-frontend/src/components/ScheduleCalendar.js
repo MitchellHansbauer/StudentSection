@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 function ScheduleCalendar() {
   const [schedules, setSchedules] = useState([]);
   const [selectedSchool, setSelectedSchool] = useState("");
+  const [selectedScheduleData, setSelectedScheduleData] = useState(null);
   const [selectedEventType, setSelectedEventType] = useState("");
   const [availableEventTypes, setAvailableEventTypes] = useState([]);
   const [events, setEvents] = useState([]);
@@ -31,6 +32,7 @@ function ScheduleCalendar() {
   useEffect(() => {
     if (selectedSchool) {
       const schoolData = schedules.find((s) => s._id === selectedSchool);
+      setSelectedScheduleData(schoolData);
       if (schoolData && schoolData.events) {
         const eventTypes = schoolData.events.map((event) => event.event_type);
         const uniqueTypes = Array.from(new Set(eventTypes));
@@ -39,6 +41,7 @@ function ScheduleCalendar() {
         setAvailableEventTypes([]);
       }
     } else {
+      setSelectedScheduleData(null);
       setAvailableEventTypes([]);
     }
     setSelectedEventType("");
@@ -56,6 +59,8 @@ function ScheduleCalendar() {
       setError("No schedule found for the selected school.");
       return;
     }
+    // Store the selected schedule data for later use.
+    setSelectedScheduleData(schoolData);
 
     let eventData;
     if (selectedEventType) {
@@ -70,10 +75,7 @@ function ScheduleCalendar() {
       }
     } else {
       eventData = {
-        games: schoolData.events.reduce(
-          (acc, ev) => acc.concat(ev.games),
-          []
-        ),
+        games: schoolData.events.reduce((acc, ev) => acc.concat(ev.games), []),
       };
     }
 
@@ -109,25 +111,45 @@ function ScheduleCalendar() {
     setSelectedEvent(null);
   };
 
+  // Updated handleListTicket uses the stored selectedScheduleData.
   const handleListTicket = () => {
-    // Navigate to the PostTicket component with event details pre-populated.
-    navigate("/postticket", {
-      state: {
-        event_name: selectedEvent.title,                  // from the FC event
-        event_date: selectedEvent.start.toISOString(),   // ensure ISO format
-        venue: selectedEvent.extendedProps.location,     // from the FC event
-        school_name: selectedSchool                      // from the user's dropdown
-      }
-    });
-    closeModal();
-  };
+    if (!selectedScheduleData) {
+      alert("No schedule data available.");
+      return;
+    }
+    // Build a payload based on the selected event.
+    const payload = {
+      event_name: selectedEvent.title,
+      event_date: selectedEvent.start.toISOString(),
+      venue: selectedEvent.extendedProps.location,
+      school_name: selectedSchool
+    };
+  
+    // For public events, call the /Attend endpoint.
+    if (String(selectedSchool).toLowerCase() === "public") {
+      axios
+        .post("http://localhost:5000/Attend", payload, { withCredentials: true })
+        .then((res) => {
+          alert("Attendance record created successfully. ID: " + res.data.attendance_id);
+        })
+        .catch((err) => {
+          alert("Error creating attendance record: " + (err.response?.data?.error || err.message));
+        });
+      closeModal();
+    } else {
+      // For University events, redirect to the PostTicket component.
+      navigate("/postticket", { state: { ...payload } });
+      closeModal();
+    }
+  };  
 
   const handlePurchaseTicket = () => {
-    // Navigate to the marketplace, optionally passing filter data.
-    navigate("/marketplace", { state: {
-      event_name: selectedEvent.title,
-      event_date: selectedEvent.start.toISOString()
-    }});
+    navigate("/marketplace", {
+      state: {
+        event_name: selectedEvent.title,
+        event_date: selectedEvent.start.toISOString(),
+      },
+    });
     closeModal();
   };
 
@@ -173,7 +195,6 @@ function ScheduleCalendar() {
           initialView="dayGridMonth"
           events={events}
           eventClick={(info) => {
-            // When an event is clicked, open the modal with event details.
             setSelectedEvent(info.event);
             setShowModal(true);
           }}
@@ -191,20 +212,24 @@ function ScheduleCalendar() {
               </div>
               <div className="modal-body">
                 <p><strong>Event:</strong> {selectedEvent.title}</p>
-                <p>
-                  <strong>Date:</strong> {selectedEvent.start.toLocaleString()}
-                </p>
-                <p>
-                  <strong>Location:</strong> {selectedEvent.extendedProps.location}
-                </p>
+                <p><strong>Date:</strong> {selectedEvent.start.toLocaleString()}</p>
+                <p><strong>Location:</strong> {selectedEvent.extendedProps.location}</p>
               </div>
               <div className="modal-footer">
-                <button className="btn btn-primary" onClick={handleListTicket}>
-                  List Ticket
-                </button>
-                <button className="btn btn-secondary" onClick={handlePurchaseTicket}>
-                  Purchase Ticket
-                </button>
+                {String(selectedSchool).toLowerCase() === "public" ? (
+                  <button className="btn btn-primary" onClick={handleListTicket}>
+                    Attend
+                  </button>
+                ) : (
+                  <>
+                    <button className="btn btn-primary" onClick={handleListTicket}>
+                      List Ticket
+                    </button>
+                    <button className="btn btn-secondary" onClick={handlePurchaseTicket}>
+                      Purchase Ticket
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>

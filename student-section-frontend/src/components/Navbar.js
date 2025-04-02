@@ -44,9 +44,12 @@ const Navbar = ({ user, setUser }) => {
             <li className="nav-item">
               <Link className="nav-link" to="/marketplace">Marketplace</Link>
             </li>
-            <li className="nav-item">
-              <Link className="nav-link" to="/uploadschedule">Upload Schedule</Link>
-            </li>
+            {/* Only show Upload Schedule link if user is an Admin */}
+            {user?.role === "Admin" && (
+              <li className="nav-item">
+                <Link className="nav-link" to="/uploadschedule">Upload Schedule</Link>
+              </li>
+            )}
             <li className="nav-item">
               <Link className="nav-link" to="/">Calendar</Link>
             </li>
