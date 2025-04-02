@@ -186,6 +186,7 @@ const HomePage = ({ user, setUser }) => {
                   placeholder="School (optional, defaults to 'public')"
                   value={school}
                   onChange={(e) => setSchool(e.target.value)}
+                  disabled
                 />
               </div>
             </>

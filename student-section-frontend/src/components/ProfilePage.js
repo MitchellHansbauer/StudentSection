@@ -11,6 +11,7 @@ function ProfilePage() {
   });
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [attendance, setAttendance] = useState([]); // new state for attendance records
 
   // For UC login section toggle
   const [showUcLogin, setShowUcLogin] = useState(false);
@@ -73,6 +74,20 @@ function ProfilePage() {
       .catch((err) => {
         console.error(err);
         setError(err.response?.data?.error || 'Error loading tickets.');
+      });
+  }, [userId]);
+
+  // 4) New: Fetch the events the user is attending from the /attendance endpoint
+  useEffect(() => {
+    if (!userId) return;
+    axios
+      .get('http://localhost:5000/attendance', { withCredentials: true })
+      .then((res) => {
+        setAttendance(res.data.attendance || []);
+      })
+      .catch((err) => {
+        console.error(err);
+        setError(err.response?.data?.error || 'Error loading attendance records.');
       });
   }, [userId]);
 
@@ -163,6 +178,7 @@ function ProfilePage() {
             className="form-control"
             value={profile.School}
             onChange={handleChange}
+            disabled
           />
         </div>
         <div className="mb-3">
@@ -238,6 +254,25 @@ function ProfilePage() {
               </li>
             );
           })}
+        </ul>
+      )}
+
+      {/* New Section: Display the events the user is attending */}
+      <hr />
+      <h3>Events I'm Attending</h3>
+      {attendance.length === 0 ? (
+        <p>No attendance records found.</p>
+      ) : (
+        <ul>
+          {attendance.map((record) => (
+            <li key={record._id}>
+              <strong>{record.event_name}</strong>
+              <br />
+              Date: {new Date(record.event_date).toLocaleString()}
+              <br />
+              Venue: {record.venue}
+            </li>
+          ))}
         </ul>
       )}
     </div>

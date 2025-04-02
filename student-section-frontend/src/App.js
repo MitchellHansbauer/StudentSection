@@ -32,7 +32,12 @@ function App() {
         <Routes>
           {user ? (
             <>
-              <Route path="/marketplace" element={<Marketplace />} />
+              <Route
+                path="/marketplace"
+                element={
+                  user?.school !== "public" ? <Marketplace /> : <Navigate to="/" />
+                }
+              />
               {/* Conditionally define the UploadSchedule route */}
               <Route
                 path="/uploadschedule"

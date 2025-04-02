@@ -602,8 +602,33 @@ def create_attendance():
 
 
 # ------------------------------
-# Endpoint: GET /tickets
-# List all available ticket listings (public endpoint)
+# Endpoint: GET /attendance
+# List all attendance records for the logged-in user.
+# ------------------------------
+@app.route('/attendance', methods=['GET'])
+def get_attendance():
+    if 'user_id' not in session:
+        return jsonify({"error": "Not authenticated"}), 401
+
+    user_id = session['user_id']
+    attendance_cursor = tickets_collection.find({"attendee_id": ObjectId(user_id)})
+
+    # Convert the cursor into a list of dictionaries we can JSON-ify
+    attendance_records = []
+    for doc in attendance_cursor:
+        doc['_id'] = str(doc['_id'])
+        doc['attendee_id'] = str(doc['attendee_id'])
+        # Convert datetime fields to ISO strings
+        if 'created_at' in doc and isinstance(doc['created_at'], datetime):
+            doc['created_at'] = doc['created_at'].isoformat()
+        attendance_records.append(doc)
+
+    return jsonify({"attendance": attendance_records}), 200
+
+
+# ------------------------------
+# Endpoint: GET /tickets/mine
+# List all tickets owned by the logged-in user.
 # ------------------------------
 @app.route('/tickets/mine', methods=['GET'])
 def get_my_tickets():
