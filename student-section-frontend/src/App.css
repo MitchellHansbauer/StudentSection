@@ -1,199 +1,208 @@
-html, body {
-  font-family: Arial, sans-serif;
-  background-size: cover;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
+/* Reset and global settings */
+* {
   margin: 0;
-  padding: 10px;
-  padding-top: 70px;
-  overflow: hidden;
+  padding: 0;
+  box-sizing: border-box;
 }
 
+/* Define theme colors using CSS variables */
+:root {
+  --primary-red: #d32f2f;    /* Accent red */
+  --black: #000000;          /* Black for backgrounds or text */
+  --white: #ffffff;          /* White for backgrounds and text */
+  --background: var(--white);
+  --text-color: var(--black);
+  --link-color: var(--primary-red);
+}
+
+/* Base body styles */
+body {
+  background-color: var(--background);
+  color: var(--text-color);
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  line-height: 1.6;
+}
+
+/* Global link styles */
+a {
+  color: var(--link-color);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Container layout */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+/* Typography for headers */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--black);
+  margin-bottom: 0.5rem;
+}
+
+/* Button styles (overriding Bootstrap defaults for primary/danger buttons) */
+.btn-primary,
+.btn-danger {
+  background-color: var(--primary-red);
+  border: none;
+  color: var(--white);
+}
+
+.btn-primary:hover,
+.btn-danger:hover {
+  background-color: #b71c1c; /* A slightly darker red for hover */
+}
+
+/* Navbar customizations */
 .navbar {
-  position: fixed;
-  top: 0;
-  left: 0;
+  background-color: var(--black);
+}
+
+.navbar-dark .navbar-brand,
+.navbar-dark .navbar-nav .nav-link {
+  color: var(--white);
+}
+
+/* Card styling for consistency */
+.card {
+  border: 1px solid var(--primary-red);
+  border-radius: 0.25rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Form controls */
+.form-control {
+  border: 1px solid var(--black);
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.form-control:focus {
+  border-color: var(--primary-red);
+  box-shadow: 0 0 3px var(--primary-red);
+}
+
+/* Table styling */
+table {
   width: 100%;
-  background: rgba(255, 255, 255, 0.9);
-  padding: 15px 20px;
-  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
 }
 
-.navbar ul {
-  list-style-type: none;
-  display: flex;
-  margin: 0;
-  padding-right: 50px;
-}
-
-.navbar ul li {
-  margin: 0 15px;
-}
-
-.navbar ul li a {
-  text-decoration: none;
-  color: #333;
-  font-weight: bold;
-  font-size: 1.2em;
-  transition: color 0.3s ease;
-}
-
-.navbar ul li a:hover {
-  color: #d1181e;
-}
-
-.navbar img {
-  width: 100px;
-}
-
-h1 {
-  font-size: 2em;
-  color: #333;
-  margin: 20px 0;
-}
-
-.button-group {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  margin-top: 40px;
-}
-
-.btn {
-  padding: 15px 30px;
-  font-size: 1.2em;
-  border: none;
-  cursor: pointer;
-  border-radius: 8px;
-  color: #fff;
-}
-
-.btn-buy {
-  background-color: #3498db;
-}
-
-.btn-sell {
-  background-color: #e74c3c;
-}
-
-.overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: none;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.popup {
-  background: #fff;
-  padding: 20px;
-  border-radius: 8px;
-  width: 300px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  text-align: center;
-  position: relative;
-}
-
-.popup h2 {
-  margin-top: 0;
-  font-size: 1.5em;
-  color: #333;
-}
-
-.close-btn {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  cursor: pointer;
-  font-size: 1.2em;
-  color: #888;
-}
-
-.listing {
-  font-size: 1em;
-  margin: 10px 0;
-  padding: 5px 10px;
-  background: #f9f9f9;
+table th,
+table td {
+  padding: 0.75rem;
+  text-align: left;
   border: 1px solid #ddd;
-  border-radius: 4px;
 }
 
-.popup .btn-popup {
-  padding: 10px;
+table th {
+  background-color: var(--black);
+  color: var(--white);
+}
+
+/* Alert messages */
+.alert {
+  padding: 0.75rem 1rem;
+  border-radius: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.alert-danger {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.alert-success {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+/* Modal customizations */
+.modal-content {
   border: none;
-  cursor: pointer;
-  border-radius: 4px;
-  font-size: 1em;
-  margin-top: 10px;
-  display: block;
-  width: 100%;
-  color: #fff;
-  text-align: center;
-  text-decoration: none;
+  border-radius: 0.5rem;
 }
 
-.btn-popup-buy-now {
-  background-color: #27ae60;
+.modal-header {
+  background-color: var(--black);
+  color: var(--white);
 }
 
-.btn-popup-set {
-  background-color: #3498db;
+.modal-footer button {
+  margin-right: 0.5rem;
 }
 
-.btn-popup-sell-now {
-  background-color: #27ae60;
+/* FullCalendar modal dialog sizing */
+.modal .modal-dialog {
+  max-width: 500px;
 }
 
-.login-container {
-  background: rgba(255, 255, 255, 0.9);
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-  width: 90%;
-  max-width: 350px;
+/* Utility classes */
+.text-center {
   text-align: center;
 }
-.logo {
-  width: 200px;
+
+.mt-3 {
+  margin-top: 1rem;
 }
-h2 {
-  margin-bottom: 20px;
+
+.mb-3 {
+  margin-bottom: 1rem;
 }
-input {
-  width: 100%;
-  padding: 10px;
-  margin: 10px 0;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  font-size: 16px;
+
+/* Additional spacing utilities */
+.p-1 {
+  padding: 0.25rem !important;
 }
+
+.p-2 {
+  padding: 0.5rem !important;
+}
+
+.p-3 {
+  padding: 1rem !important;
+}
+
+/* Optional: A helper class for red borders */
+.border-red {
+  border: 2px solid var(--primary-red);
+}
+
+/* Global button style */
 button {
-  width: 100%;
-  padding: 10px;
-  background-color: #d1181e;
-  border: none;
-  color: white;
-  font-size: 16px;
   cursor: pointer;
-  border-radius: 5px;
+  font-size: 1rem;
 }
-button:hover {
-  background-color: #a51418;
+
+/* FullCalendar customizations for a white background and black text */
+.fc {
+  background-color: var(--white) !important;
+  color: var(--black) !important;
 }
-.error {
-  color: red;
-  font-size: 14px;
-  margin-top: -5px;
-  margin-bottom: 10px;
+
+/* Calendar toolbar (month/year title, navigation buttons, etc.) */
+.fc-toolbar-title {
+  color: var(--white) !important;
+}
+
+/* Column header text (day names) */
+.fc .fc-col-header-cell-cushion {
+  color: var(--white) !important;
+}
+
+/* Day numbers styling: use red for the dates */
+.fc .fc-daygrid-day-number {
+  color: var(--primary-red) !important;
+}
+
+/* Optional: Ensure events use black text for consistency */
+.fc-event, .fc-event-title {
+  color: var(--black) !important;
 }

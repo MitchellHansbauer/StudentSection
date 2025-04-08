@@ -9,6 +9,7 @@ import UploadSchedule from "./components/UploadSchedule";
 import ScheduleCalendar from "./components/ScheduleCalendar";
 import PostTicket from "./components/PostTicket";
 import CheckoutForm from "./components/CheckoutForm"; // Import CheckoutForm
+import "./App.css";
 
 function App() {
   const [user, setUser] = useState(null);
