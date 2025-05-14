@@ -444,6 +444,54 @@ def connect_third_party_account(user_id):
 
 
 # ------------------------------
+# Endpoint: POST /users/stripe_account_session
+# Create a Stripe Connect account session for the user.
+# ------------------------------
+@app.route('/users/stripe_account_session', methods=['POST'])
+def create_account_session():
+    try:
+        connected_account_id = request.get_json().get('account')
+
+        account_session = stripe.AccountSession.create(
+          account=connected_account_id,
+          components={
+            "account_onboarding": {"enabled": True},
+          },
+        )
+
+        return jsonify({
+          'client_secret': account_session.client_secret,
+        })
+    except Exception as e:
+        print('An error occurred when calling the Stripe API to create an account session: ', e)
+        return jsonify(error=str(e)), 500
+
+
+# ------------------------------
+# Endpoint: POST /users/stripe_account
+# Create a Stripe Connect account for the user.
+# ------------------------------
+@app.route('/users/stripe_account', methods=['POST'])
+def create_account():
+    # Ensure the user is authenticated
+    if 'user_id' not in session:
+        return jsonify({"error": "Not authenticated"}), 403
+    user_id = session['user_id']
+    try:
+        # Create a new Stripe Connect account (e.g., Express account)
+        account = stripe.Account.create()  # (you could specify type="express" and other details as needed)
+        # Store the Stripe account ID in the user's MongoDB profile
+        users_collection.update_one(
+            {"_id": ObjectId(user_id)},
+            {"$set": {"third_party_account.stripe_account_id": account.id}}
+        )
+        return jsonify({ "account": account.id }), 200
+    except Exception as e:
+        print("Stripe account creation failed:", e)
+        return jsonify({ "error": str(e) }), 500
+
+
+# ------------------------------
 # Endpoint: POST /tickets
 # Create a ticket listing using schedule event details.
 # confirm the requested event truly exists in the mock Paciolan system, and only then create
