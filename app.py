@@ -40,7 +40,7 @@ def generate_session_id():
 server_session = Session(app)
 
 # Stripe Integration
-os.environ["STRIPE_SECRET_KEY"] = "sk_test_51Qowe4R6XyVnHR5eZpehxe32nBhRjciGkrbojz4gV8DbbqLUtQl0RrfOso2Uc1Uq4G0SQTGSIFKdYuBPussu2Uap00mq5IVAwo"
+os.environ["STRIPE_SECRET_KEY"] = "sk_test_51RXO1zQp6XVKzqTdH3igivp8fIHuIB9up7OSpGF9eIFdtBH6TOWoiOkgrTCTBQ3tZJTNuidwryGo09FGtUanqqLi00XFOJ8D5u"
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 
 # MongoDB connection
@@ -103,6 +103,14 @@ def get_auth_token():
 
 def generate_request_id():
     return str(uuid.uuid4())
+
+#Pull the new session for later use
+def get_user_session(useremail):
+    sessions=r.scan(cursor=0, match="session:*")
+    for newsession in sessions[1]:
+        session_data=r.get(newsession)
+        if useremail in session_data:
+            return newsession    
 
 def transfer_ticket_initialize(ticket, buyer):
     """
@@ -276,15 +284,7 @@ def login():
 
 
     return jsonify({"message": "Login successful"}), 200
-
-#Pull the new session for later use
-def get_user_session(useremail):
-    sessions=r.scan(cursor=0, match="session:*")
-    for newsession in sessions[1]:
-        session_data=r.get(newsession)
-        if useremail in session_data:
-            return newsession
-        
+       
 
 # ------------------------------
 # Endpoint: POST /logout
@@ -469,26 +469,78 @@ def create_account_session():
 
 # ------------------------------
 # Endpoint: POST /users/stripe_account
-# Create a Stripe Connect account for the user.
+# Create (or reuse) a Stripe Connect account for the user.
 # ------------------------------
 @app.route('/users/stripe_account', methods=['POST'])
 def create_account():
-    # Ensure the user is authenticated
     if 'user_id' not in session:
         return jsonify({"error": "Not authenticated"}), 403
+
     user_id = session['user_id']
+    user = users_collection.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
     try:
-        # Create a new Stripe Connect account (e.g., Express account)
-        account = stripe.Account.create()  # (you could specify type="express" and other details as needed)
-        # Store the Stripe account ID in the user's MongoDB profile
-        users_collection.update_one(
-            {"_id": ObjectId(user_id)},
-            {"$set": {"third_party_account.stripe_account_id": account.id}}
+        # 1) Check if we've already created one
+        existing = (
+            user.get("third_party_account", {})
+                .get("stripe_account_id")
         )
-        return jsonify({ "account": account.id }), 200
+        if existing:
+            account_id = existing
+        else:
+            # 2) Create a new Stripe Connect account
+            acct = stripe.Account.create(
+                type="express",
+                country="US",
+                email=user['email'],
+                business_type="individual",
+                individual={
+                    "first_name": user['FirstName'],
+                    "last_name": user['LastName'],
+                    "email": user['email'],
+                    "phone": user['phone'],
+                },
+                business_profile={
+                    "url": "https://studentsection.net",
+                    "mcc": "5815",
+                },
+                capabilities={
+                    "card_payments": {"requested": True},
+                    "transfers":     {"requested": True},
+                },
+                metadata={
+                    "user_id": str(user['_id']),
+                    "school":  user['School'],
+                }
+            )
+            account_id = acct.id
+
+            # 3) Persist it to MongoDB
+            users_collection.update_one(
+                {"_id": ObjectId(user_id)},
+                {"$set": {
+                    "third_party_account.stripe_account_id": account_id
+                }}
+            )
+
+        # 4) Always generate a fresh onboarding link
+        link = stripe.AccountLink.create(
+            account=account_id,
+            refresh_url="https://yourdomain.com/reauth",
+            return_url="https://yourdomain.com/return",
+            type="account_onboarding",
+        )
+
+        return jsonify({
+            "account":       account_id,
+            "onboarding_url": link.url
+        }), 200
+
     except Exception as e:
-        print("Stripe account creation failed:", e)
-        return jsonify({ "error": str(e) }), 500
+        app.logger.error("Stripe account creation/lookup failed: %s", e)
+        return jsonify({"error": str(e)}), 500
 
 
 # ------------------------------

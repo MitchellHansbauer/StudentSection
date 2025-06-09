@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@stripe/connect-js": "^3.3.25",
+    "@stripe/react-connect-js": "^3.3.24"
+  }
+}

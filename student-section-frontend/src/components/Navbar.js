@@ -10,24 +10,34 @@ const Navbar = ({ user, setUser }) => {
 
   const onLogoutClick = async () => {
     try {
-      await axios.post("http://localhost:5000/logout", {}, {
-        withCredentials: true,
-      });
+      await axios.post(
+        'http://localhost:5000/logout',
+        {},
+        { withCredentials: true }
+      );
       setUser(null);
     } catch (err) {
-      console.error("Error logging out:", err);
+      console.error('Error logging out:', err);
     }
   };
+
+  // Normalize school name for comparison
+  const schoolName = user?.school?.trim().toLowerCase();
 
   return (
     <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
       <div className="container-fluid">
         {/* Logo */}
         <Link className="navbar-brand" to="/">
-          <img src={Logo} alt="Student Section Logo" className="logo-placeholder" style={{ height: "40px" }} />
+          <img
+            src={Logo}
+            alt="Student Section Logo"
+            className="logo-placeholder"
+            style={{ height: '40px' }}
+          />
         </Link>
 
-        {/* Toggle Button for Mobile */}
+        {/* Hamburger Toggle */}
         <button
           className="navbar-toggler"
           type="button"
@@ -39,25 +49,39 @@ const Navbar = ({ user, setUser }) => {
         </button>
 
         {/* Navbar Links */}
-        <div className={`collapse navbar-collapse ${hamburgerOpen ? 'show' : ''}`} id="navbarNav">
+        <div
+          className={`collapse navbar-collapse ${hamburgerOpen ? 'show' : ''}`}
+          id="navbarNav"
+        >
           <ul className="navbar-nav ms-auto">
-            {user?.school !== "public" && (
+            {user?.school !== 'public' && (
               <li className="nav-item">
-                <Link className="nav-link" to="/marketplace">Marketplace</Link>
-                </li>
-            )}
-            {/* Only show Upload Schedule link if user is an Admin */}
-            {user?.role === "Admin" && (
-              <li className="nav-item">
-                <Link className="nav-link" to="/uploadschedule">Upload Schedule</Link>
+                <Link className="nav-link" to="/marketplace">
+                  Marketplace
+                </Link>
               </li>
             )}
+
+            {user?.role === 'Admin' && (
+              <li className="nav-item">
+                <Link className="nav-link" to="/uploadschedule">
+                  Upload Schedule
+                </Link>
+              </li>
+            )}
+
             <li className="nav-item">
-              <Link className="nav-link" to="/">Calendar</Link>
+              <Link className="nav-link" to="/">
+                Calendar
+              </Link>
             </li>
+
             <li className="nav-item">
-              <Link className="nav-link" to="/profile">Profile</Link>
+              <Link className="nav-link" to="/profile">
+                Profile
+              </Link>
             </li>
+
             <li className="nav-item">
               <button className="btn btn-danger nav-link" onClick={onLogoutClick}>
                 Logout
