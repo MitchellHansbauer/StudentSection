@@ -9,26 +9,23 @@ export default function ConnectStripe() {
   const containerRef = useRef(null);
   const navigate = useNavigate();
 
+  // 1) Initialize Stripe Connect instance
   useEffect(() => {
     let mounted = true;
-    let onboardingElement;
-
     (async () => {
       try {
-        // 1) Get current user
+        // 1a) Get current user
         const { data: me } = await axios.get(
           'http://localhost:5000/users/me',
           { withCredentials: true }
         );
 
-        // 2) Fetch their profile to see if we already have a stripe_account_id
+        // 1b) Fetch or create Stripe account ID
         const { data: { profile } } = await axios.get(
           `http://localhost:5000/users/${me.user_id}/profile`,
           { withCredentials: true }
         );
         let accountId = profile.third_party_account?.stripe_account_id;
-
-        // 3) If not, call your backend to create it
         if (!accountId) {
           const { data } = await axios.post(
             'http://localhost:5000/users/stripe_account',
@@ -37,10 +34,9 @@ export default function ConnectStripe() {
           );
           accountId = data.account;
         }
-
         if (!mounted) return;
 
-        // 4) Initialize Connect.js
+        // 1c) Load Connect.js
         const inst = loadConnectAndInitialize({
           publishableKey: process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY,
           fetchClientSecret: async () => {
@@ -51,51 +47,59 @@ export default function ConnectStripe() {
             );
             return data.client_secret;
           },
-          appearance: { overlays: 'dialog' },
+          appearance: { overlays: 'none' },
         });
-
         if (!mounted) return;
         setInstance(inst);
-
-        // 5) Create the onboarding element and mount it into our container
-        onboardingElement = await inst.create('account-onboarding', {
-          onExit: () => navigate('/profile'),
-        });
-        if (containerRef.current) {
-          containerRef.current.appendChild(onboardingElement);
-        }
       } catch (err) {
         console.error(err);
-        const msg =
-          err.response?.data?.error ||
-          err.message ||
-          'Error initializing Stripe Connect';
+        const msg = err.response?.data?.error || err.message || 'Error initializing Stripe Connect';
         if (mounted) setError(msg);
       }
     })();
-
     return () => {
       mounted = false;
-      // Clean up the embedded element
+    };
+  }, [navigate]);
+
+  // 2) Once instance is ready, create and mount the onboarding element
+  useEffect(() => {
+    if (!instance) return;
+    let mounted = true;
+    let onboardingElement;
+    (async () => {
+      try {
+        onboardingElement = await instance.create('account-onboarding', {
+          onExit: () => navigate('/profile'),
+        });
+        if (mounted && containerRef.current) {
+          containerRef.current.appendChild(onboardingElement);
+        }
+      } catch (err) {
+        console.error('Error mounting Stripe onboarding:', err);
+        if (mounted) setError(err.message || 'Error mounting Stripe onboarding');
+      }
+    })();
+    return () => {
+      mounted = false;
       if (instance && onboardingElement) {
         try {
           instance.unmount(onboardingElement);
         } catch {}
       }
     };
-  }, [navigate]);
-
-  if (error) {
-    return <div className="alert alert-danger">{error}</div>;
-  }
-  if (!instance) {
-    return <div>Loading Stripe onboarding…</div>;
-  }
+  }, [instance, navigate]);
 
   return (
     <div className="container mt-4">
       <h2>Stripe Onboarding</h2>
-      <div ref={containerRef} />
+      {error && <div className="alert alert-danger">{error}</div>}
+      <div
+        ref={containerRef}
+        style={{ minHeight: '300px' }}
+      >
+        {!instance && !error && <p>Loading Stripe onboarding…</p>}
+      </div>
     </div>
   );
 }

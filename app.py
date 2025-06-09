@@ -15,20 +15,21 @@ from bson import ObjectId
 from datetime import timedelta
 from schedule_parser import parse_html_schedule
 from fuzzy_match import fuzzy_match_event
+from dotenv import load_dotenv
+load_dotenv()
 
 app = Flask(__name__)
 app.config['SESSION_COOKIE_SECURE'] = False  # if you're on HTTP in dev
 CORS(app, supports_credentials=True)
 
 #Redis Integration - Secret Key
-app.secret_key = os.getenv('SECRET_KEY', default='BAD_SECRET_KEY')
-# Configure Redis for storing the session data on the server-side
+app.secret_key = os.getenv('SECRET_KEY')
 app.config['SESSION_TYPE'] = 'redis'
 app.config['SESSION_PERMANENT'] = True
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=6)
 app.config['SESSION_SERIALIZATION_FORMAT'] = 'json'
 app.config['SESSION_USE_SIGNER'] = True
-app.config['SESSION_REDIS'] = redis.from_url('redis://127.0.0.1:6379')
+app.config['SESSION_REDIS'] = redis.from_url(os.getenv('REDIS_URL'))
 app.config['SESSION_COOKIE_SECURE'] = True # uses https or not
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 #Connect to Redis
@@ -40,11 +41,10 @@ def generate_session_id():
 server_session = Session(app)
 
 # Stripe Integration
-os.environ["STRIPE_SECRET_KEY"] = "sk_test_51RXO1zQp6XVKzqTdH3igivp8fIHuIB9up7OSpGF9eIFdtBH6TOWoiOkgrTCTBQ3tZJTNuidwryGo09FGtUanqqLi00XFOJ8D5u"
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 
 # MongoDB connection
-client = MongoClient('mongodb+srv://dbadmin:Time2add@studentsectiondemo.9mdru.mongodb.net/?retryWrites=true&w=majority&appName=StudentSectionDemo')
+client = MongoClient(os.getenv('MONGO_URI'))
 ssdb = client['student_section']
 schedules_collection = ssdb['schedules']
 users_collection = ssdb['users']
